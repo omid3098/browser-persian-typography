@@ -26,6 +26,8 @@ with its words out of order, in the system's fallback font.
   Arabic-script text gets that family first, followed by the font stack the
   page gave it. Never a rule that replaces the page's fonts for other text.
   Text fields and editable areas get it too, so typed Persian shows in it.
+  On a page without Persian, empty or Latin-only fields are left untouched;
+  typing Persian activates the field. This keeps the no-write budget below.
 - **F3. Code fonts stay.** `pre`, `code`, `kbd`, `samp` and any element whose
   own font is monospace are not touched.
 - **F4. The user's font.** The default is the bundled Vazirmatn. The user may
@@ -79,9 +81,15 @@ with its words out of order, in the system's fallback font.
   direction comes from its whole text, and `auto` while it is empty. The
   editor's inner nodes belong to the editor. Plain text fields and `textarea`
   get `dir="auto"` when the page gave none.
+  As with F2, fields on a page without Persian wait until they hold Persian.
+  A plain field that already inherits RTL keeps that direction: `auto` on an
+  empty input otherwise moves Persian Wikipedia's search placeholder left.
 - **D10. Layout is never mirrored.** A direction is set only on a text block,
   a real list or a data table. Never on a container of other blocks, a flex or
   grid row, the page or its `body`.
+  A font change can still change glyph widths, line height and wrapping. The
+  native-RTL fixture's navigation grows from 18 to 25 px with Vazirmatn; this
+  rule preserves layout direction and alignment, not identical font metrics.
 
 ## Behaviour
 
