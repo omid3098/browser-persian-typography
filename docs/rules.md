@@ -61,12 +61,15 @@ with its words out of order, in the system's fallback font.
   `dir="ltr"`. Differs from T3, which also sets `ltr` on every Latin-only
   block of a chat: on an unknown page that would move English labels of a
   Persian site to the other side.
-- **D6. Lists and tables.** A list that draws markers and holds Persian text
-  becomes RTL as a whole, so bullets and numbers sit on the right. A data
-  table (one with header cells) that holds Persian text becomes RTL as a whole.
+- **D6. Lists and tables.** A list that draws markers becomes RTL as a whole
+  when more than half of its own items that have letters are Persian by D1.
+  A data table (one with header cells) becomes RTL as a whole when more than
+  half of its cells that have letters are Persian by D1. Otherwise the list
+  or table keeps its direction and only the text blocks inside it are decided.
   A `ul` used for layout (no markers, flex or grid) and a table without header
-  cells are not turned: only their text blocks are decided. Differs from T3,
-  where every list and table of a chat is prose.
+  cells are never turned. Differs from T3, where every list and table of a chat
+  is prose: on the web one Persian file name in an English table would mirror
+  the table.
 - **D7. A direction the page wrote.** `dir="rtl"` on an element is kept.
   `dir="auto"` and `dir="ltr"` on a text block, or on an inline wrapper around
   its text, are replaced when D1 says `rtl`: these two are the disease on the

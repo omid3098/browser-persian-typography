@@ -80,10 +80,10 @@
     }
     return el && !/^(HTML|BODY)$/.test(el.tagName) ? el : null
   }
-  function readable(el) {
+  function readable(el, ownItem = false) {
     const walk = document.createTreeWalker(el, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
       acceptNode(node) {
-        if (node.nodeType === 1) return node.matches(SKIP) || (node !== el && node.matches(EDIT)) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_SKIP
+        if (node.nodeType === 1) return node.matches(SKIP) || (node !== el && node.matches(EDIT)) || (ownItem && node.matches("ul,ol,table")) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_SKIP
         return NodeFilter.FILTER_ACCEPT
       }
     })
@@ -168,15 +168,22 @@
       if (!el.isConnected || roots.some(root => root === el || root.contains?.(el))) restore(el)
     }
     for (const root of roots) collect(root, holders, blocks, groups, fields)
+    const turned = new Set()
     for (const group of groups) {
-      if (dominantDirection(readable(group)) !== "rtl") continue
+      if (group.matches("ul,ol,table")) {
+        const selector = group.matches("table") ? "td,th" : "li"
+        const items = [...group.querySelectorAll(selector)].filter(item => item.closest("ul,ol,table") === group)
+        const directions = items.map(item => dominantDirection(readable(item, true))).filter(Boolean)
+        if (directions.filter(dir => dir === "rtl").length <= directions.length / 2) continue
+      } else if (dominantDirection(readable(group)) !== "rtl") continue
       direction(group, "rtl")
+      turned.add(group)
       const items = group.querySelectorAll("li,td,th,p,blockquote")
       for (const item of items) if (!skipped(item) && !editable(item) && textBlock(item)) blocks.add(item)
     }
     for (const el of blocks) {
       const dir = dominantDirection(readable(el))
-      if (dir === "rtl" || (dir === "ltr" && Array.from(groups).some(group => group.contains(el)))) direction(el, dir)
+      if (dir === "rtl" || (dir === "ltr" && Array.from(turned).some(group => group.contains(el)))) direction(el, dir)
       if (dir === "rtl") {
         for (const code of el.querySelectorAll(CODE)) {
           prop(code, "direction", "ltr")

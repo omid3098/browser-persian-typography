@@ -1,4 +1,3 @@
-const { chromium } = require("playwright")
 const fs = require("node:fs")
 const path = require("node:path")
 const http = require("node:http")
@@ -7,10 +6,12 @@ const work = path.join(root, ".agent-work/engine")
 process.env.PLAYWRIGHT_BROWSERS_PATH ||= path.join(work, "browsers")
 process.env.TEMP = process.env.TMP = path.join(work, "tmp")
 fs.mkdirSync(process.env.TEMP, { recursive: true })
+const { chromium } = require("playwright")
 
 const tweet = `Claude Duet امروز برام باز شد.\nالان یه بات Grok هست که بخشی از کارهای سیب‌کده رو می‌کنه. می‌خوام همون رو با Duet تست کنم و اگه دربیاد جابه‌جا شم؛ بقیه‌ی کارهام همین الان روی Claude هست و ترجیح می‌دم همه‌چی یه جا باشه.\nنتیجه رو می‌نویسم.`
-const chat = `<h2>پاسخ Claude</h2><p id="mixed">Hello امروز خوبه <code id="code">const فارسی = 1</code></p><ul id="list"><li>گزینه اول</li><li id="englishItem">English only</li></ul><ol><li>اول</li><li>second</li></ol><table id="data"><tr><th>نام</th><th>Name</th></tr><tr><td>داده</td><td>Data</td></tr></table><pre id="pre">const فارسی = 1</pre><p>یه خط English وسط متن</p>`
+const chat = `<h2>پاسخ Claude</h2><p id="mixed">Hello امروز خوبه <code id="code">const فارسی = 1</code></p><ul id="list"><li>گزینه اول</li><li>گزینه دوم</li><li id="englishItem">English only</li></ul><ol><li>اول</li><li>second</li></ol><table id="data"><tr><th>نام</th><th>Name</th></tr><tr><td>داده</td><td>مقدار</td></tr><tr><td>۱۲۳</td><td id="englishCell">Data</td></tr></table><pre id="pre">const فارسی = 1</pre><p>یه خط English وسط متن</p>`
 const pages = {
+  groups: '<table id="files"><tr><th>Name</th><th>Last commit message</th><th>Last commit date</th></tr><tr><td><div><a>README.md</a></div></td><td>Update docs</td><td>Yesterday</td></tr><tr><td><div><a>راهنما.txt</a></div></td><td>Add file</td><td>Today</td></tr></table><ul id="tie"><li>فارسی</li><li>English</li><li>123</li></ul><ul id="nested"><li>English<ul><li>فارسی</li><li>فارسی</li></ul></li><li>English</li></ul><ul id="layout" style="display:flex;list-style:none"><li>فارسی</li></ul><table id="noHeaders"><tr><td>فارسی</td></tr></table>',
   tweet: `<div style="display:flex;flex-direction:column"><div id="tweet" dir="auto" lang="en" data-testid="tweetText"><span id="letters">${tweet}</span></div></div>`,
   linkedin: '<p id="post"><span id="wrapper" dir="ltr">Hello امروز خوبه</span></p>',
   chat,

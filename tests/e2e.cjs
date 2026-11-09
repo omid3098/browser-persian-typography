@@ -21,6 +21,7 @@ const { start, fonts, chat } = require("./harness.cjs")
     console.log("PASS b: authored LTR inline wrapper")
     await open("chat"); await rtl("h2"); await rtl("#list"); await rtl("#data")
     assert.equal(await css("#englishItem", "direction"), "ltr")
+    assert.equal(await css("#englishCell", "direction"), "ltr")
     assert.equal(await css("#pre", "direction"), "ltr")
     assert.equal(await css("#code", "direction"), "ltr")
     assert(!/PersianTypography/.test(await css("#code", "fontFamily")))
@@ -37,6 +38,18 @@ const { start, fonts, chat } = require("./harness.cjs")
     await page.locator("#mixed").evaluate(el => { el.textContent = "English only" }); await settle()
     assert.equal(await css("#mixed", "direction"), "ltr")
     console.log("PASS c: chat, lists, table, code, streamed insertion and replacement")
+    await off(); await open("groups")
+    const cells = () => page.locator("#files th,#files td").evaluateAll(els => els.map(el => el.getBoundingClientRect().x))
+    const columns = await cells(); await on(); await settle()
+    assert.deepEqual(await cells(), columns, "GitHub-shaped table keeps every column")
+    for (const selector of ["#files", "#tie", "#nested", "#layout", "#noHeaders"]) {
+      assert.equal(await page.locator(selector).getAttribute("dir"), null, selector)
+    }
+    // Crossing the majority in either direction must re-evaluate the whole list.
+    await page.locator("#tie li").nth(1).evaluate(el => el.textContent = "فارسی دوم"); await settle(); await rtl("#tie")
+    await page.locator("#tie li").nth(1).evaluate(el => el.textContent = "English"); await settle()
+    assert.equal(await page.locator("#tie").getAttribute("dir"), null)
+    console.log("PASS D6: GitHub columns, strict majority, nested own items, layout exclusions, live threshold changes")
 
     for (const fixture of ["native", "shell"]) {
       await off(); await open(fixture)
