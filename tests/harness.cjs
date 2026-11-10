@@ -23,7 +23,7 @@ const pages = {
   stream: '<section id="stream"></section>',
   big: Array.from({ length: 20000 }, (_, i) => `<span>English text ${i}</span>`).join("")
 }
-async function start(name) {
+async function start(name, { extension = true } = {}) {
   const server = http.createServer((req, res) => {
     if (req.url === "/page.css") { res.setHeader("Content-Type", "text/css"); res.end('body{font-family:Arial,sans-serif;margin:20px}#tweet{white-space:pre-line}'); return }
     const key = req.url.slice(1).split("?")[0]
@@ -35,12 +35,12 @@ async function start(name) {
   const profile = path.join(work, `profile-${name}`)
   const context = await chromium.launchPersistentContext(profile, {
     channel: "chromium", headless: true, viewport: { width: 1440, height: 900 },
-    args: [`--disable-extensions-except=${root}`, `--load-extension=${root}`, "--no-first-run", "--disable-background-networking", "--disable-gpu"]
+    args: [...(extension ? [`--disable-extensions-except=${root}`, `--load-extension=${root}`] : ["--disable-extensions"]), "--no-first-run", "--disable-background-networking", "--disable-gpu"]
   })
-  const worker = context.serviceWorkers()[0] || await context.waitForEvent("serviceworker")
+  const worker = extension ? context.serviceWorkers()[0] || await context.waitForEvent("serviceworker") : null
   const base = `http://127.0.0.1:${server.address().port}`
   const control = await context.newPage()
-  await control.goto(new URL("manifest.json", worker.url()).href)
+  if (extension) await control.goto(new URL("manifest.json", worker.url()).href)
   async function setting(operation, args = {}) {
     return control.evaluate(async ({ operation, args }) => {
       const api = await import(chrome.runtime.getURL("settings.js"))
@@ -51,6 +51,7 @@ async function start(name) {
   }
   const page = await context.newPage()
   async function settle(p = page) {
+    if (!extension) { await p.evaluate(() => document.fonts.ready); return }
     // Wait for a concrete engine state in its isolated world, not a time guess.
     const client = await context.newCDPSession(p)
     const worlds = []

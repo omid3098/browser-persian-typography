@@ -130,10 +130,18 @@ result over a budget is a failure, not a cost to weigh.
   style or node. On a page of 20,000 Latin text nodes the extension's own work
   from load to idle is at most 50 ms in all, and no single stretch of it is
   longer than 16 ms. Measured five times; all five pass.
-- **Idle.** With a static Persian page open, a headless browser with the
-  extension stays under 1% of one core:
-  `python C:\Users\Omid\.agents\tools\cpu_budget.py --pid <browser> --max 1.0`
-  (five windows; all five pass).
+- **Idle.** Compare the same static Persian fixture in headless Chromium with
+  the extension absent and present. Start both measurements 180 seconds after
+  the fixture, fonts and network have finished loading (`networkidle`), after
+  the extension-free browser's startup work has settled. Startup measurements
+  are kept too: attribution observed another Chromium utility process starting
+  in the 150–180 second window even without the extension. From that common point, every one of five
+  30-second windows with the extension must be under 1% of one core, and the
+  engine's flush count must not increase. Report all five windows for both
+  browsers, plus per-process CPU deltas and flush deltas. The extension-free
+  windows must also stay under 1% to confirm that point is settled. The check
+  uses the shared `cpu_budget.py` process-tree accounting and 0.25-second polls
+  through `tests/idle-sample.py`; run it with `npm run budget:idle`.
 
 ## Not decided yet
 

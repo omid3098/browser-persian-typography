@@ -58,13 +58,13 @@ const { start, fonts, chat } = require("./harness.cjs")
       }))
       const before = await snapshot(); await on(); await settle()
       const after = await snapshot()
-      // Font metrics can change glyph widths and line height; direction and alignment cannot change.
+      // Glyph widths can change; direction and alignment cannot change.
       assert.deepEqual(after.map(row => [row[0], row[0] === "center" ? "rtl" : row[2], row[3]]), before.map(row => [row[0], row[0] === "center" ? "rtl" : row[2], row[3]]))
       assert.equal(after[0][1], before[0][1])
       if (fixture === "shell") assert(after[1][1] > after[0][1])
       else assert.equal(await page.locator("#nativeInput").getAttribute("dir"), null)
     }
-    console.log("PASS d,f: native RTL and shell order/alignment unchanged; font metrics may alter spacing")
+    console.log("PASS d,f: native RTL and shell order/alignment unchanged")
 
     await off(); await open("latin")
     const original = await page.content(); await on(); await settle()

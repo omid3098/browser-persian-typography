@@ -31,8 +31,9 @@ The size check also leaves a clean, ready-to-load distribution in
 
 There is no popup yet. Browser internal pages and browser extension stores do
 not allow content scripts. Shadow DOM and Firefox are outside this version.
-Font metrics can change line wrapping and spacing; layout containers are not
-mirrored. A page's explicit monospace fonts remain unchanged, including a
+Font widths can change line wrapping. The replacement font matches the page's
+vertical measures, allowing room for whole letters if they cannot fit. Layout
+containers are not mirrored. A page's explicit monospace fonts remain unchanged, including a
 textarea that uses its browser's default monospace font.
 
 ## Interface settings module
@@ -89,9 +90,14 @@ checks all five 20,000-node runs: no DOM mutations, engine work at most 50 ms,
 and no engine stretch above 16 ms. It measures script setup, settings
 application, observer callbacks and frame work in the isolated content-script
 world; it excludes waiting for browser messages or animation frames.
-The idle gate calls the shared `cpu_budget.py` against the Chromium browser
-process tree for five 30-second windows. Every window must stay at or below
-1% of one core.
+The font check compares native RTL and post line heights with bundled Vazirmatn
+and selected Tahoma, and compares clipped/unclipped ink pixels (Python Pillow
+is needed for that check).
+The idle gate uses the shared `cpu_budget.py` process-tree accounting. It
+compares Chromium without and with the extension, keeping six startup windows
+and then checking five 30-second windows from 180 seconds after load, fonts and
+network idle. Every checked window must be under 1% of one core, and the engine
+must perform zero flushes. Per-process CPU is printed for every window.
 
 Live-page screenshots (1440×900) and observations go to
 `.agent-work/engine/shots`. X is skipped when no public post renders without
