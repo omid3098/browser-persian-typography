@@ -194,6 +194,8 @@ What the checks do:
 
 ## Privacy
 
+Read the [privacy policy](PRIVACY.md).
+
 - The extension never rewrites page text, sends nothing over the network, logs no content and loads no remote code. The font loads from the extension itself.
 - Settings stay in `storage.local` on this computer: the host names of sites you changed, your font choice and a local cache of the font check. No page content is stored.
 - It asks for access to all sites because it must run on every page. It also asks for `storage` (settings), `fontSettings` (the list of installed fonts) and `offscreen` (the font check).
