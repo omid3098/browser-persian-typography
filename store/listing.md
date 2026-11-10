@@ -91,3 +91,19 @@ Tools
 ## Listing language
 
 Persian (فارسی)
+
+## Official URL
+
+None. The field is optional. It accepts only a site verified in Google Search Console for the developer's Google account, and a github.com address cannot be verified.
+
+## Homepage URL
+
+https://github.com/omid3098/browser-persian-typography
+
+## Support URL
+
+https://github.com/omid3098/browser-persian-typography/issues
+
+## Mature content
+
+No
