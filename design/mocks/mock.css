@@ -91,7 +91,7 @@ svg{display:block;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;stro
 /* ---------- shared bits of the extension's own surfaces ---------- */
 .pop,.menu,.toast{direction:rtl;font-family:"Vazirmatn","Segoe UI",sans-serif;color:var(--ink)}
 .pop{background:var(--surf);box-shadow:var(--shadow);position:relative;overflow:hidden}
-.host{direction:ltr;unicode-bidi:isolate;text-align:start}
+.host{direction:ltr;unicode-bidi:isolate;text-align:right}
 .sw{width:52px;height:32px;border-radius:16px;background:var(--line2);position:relative;flex:none}
 .sw i{position:absolute;top:4px;inset-inline-start:4px;width:24px;height:24px;border-radius:12px;background:var(--surf)}
 .sw.on{background:var(--ink)}
@@ -111,10 +111,11 @@ svg{display:block;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;stro
 .frow:hover,.frow.pointed{background:var(--point)}
 .frow .l{flex:1;display:flex;align-items:center;gap:8px;min-width:0}
 .frow .nm{font-size:18px;white-space:nowrap}
+.frow .smp{font-size:16px;color:var(--ink2);white-space:nowrap}
 .frow .ck{width:20px;height:20px;color:var(--ink)}
 .frow .ck svg{width:20px;height:20px}
 .tag{font-size:12px;line-height:20px;padding:0 8px;border-radius:10px;background:var(--bg2);color:var(--ink2);white-space:nowrap}
-.cursor{position:absolute;top:24px;inset-inline-end:48px;width:20px;height:28px;pointer-events:none;z-index:3}
+.cursor{position:absolute;top:24px;inset-inline-end:112px;width:20px;height:28px;pointer-events:none;z-index:3}
 .cursor svg{width:20px;height:28px;fill:#fff;stroke:#111;stroke-width:1.5}
 .none{padding:16px;color:var(--ink3)}
 .srow{height:56px;padding:0 8px 0 16px;display:flex;align-items:center;gap:8px;border-radius:8px}

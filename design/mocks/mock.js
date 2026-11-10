@@ -34,9 +34,9 @@
 
   const PRESETS = {
     'a-on': {}, 'a-off': { on: 0, toast: 1 }, 'a-menu': { menu: 1 }, 'a-settings': { tab: 'set' },
-    'b-on': { pop: 'main' }, 'b-off': { on: 0, pop: 'main' }, 'b-font': { pop: 'font', fake: 'Tahoma' },
+    'b-on': { pop: 'main' }, 'b-off': { on: 0, pop: 'main' }, 'b-font': { pop: 'font', fake: 'Arial' },
     'b-sites': { pop: 'sites' }, 'b-on-first': { pop: 'main', others: [] },
-    'c-on': { pop: 'main' }, 'c-off': { on: 0, pop: 'main' }, 'c-font': { pop: 'font', fake: 'Tahoma' }, 'c-sites': { pop: 'sites' }
+    'c-on': { pop: 'main' }, 'c-off': { on: 0, pop: 'main' }, 'c-font': { pop: 'font', fake: 'Arial' }, 'c-sites': { pop: 'sites' }
   };
 
   const app = document.getElementById('app');
@@ -66,7 +66,7 @@
       const chosen = f.css === S.font, pointed = S.hover === f.css;
       return `<li><button class="frow${chosen ? ' chosen' : ''}${pointed ? ' pointed' : ''}" data-act="pick" data-font="${f.css}" aria-pressed="${chosen}">
         <span class="l"><span class="nm" style="font-family:${fontStack(f.css)}">${f.name}</span>${f.def ? '<span class="tag">پیش‌فرض</span>' : ''}</span>
-        <span class="ck">${chosen ? I.check : ''}</span></button>${pointed && S.fake && !bare ? CURSOR : ''}</li>`;
+        ${f.def ? '' : `<span class="smp" style="font-family:${fontStack(f.css)}">نمونه</span>`}<span class="ck">${chosen ? I.check : ''}</span></button>${pointed && S.fake && !bare ? CURSOR : ''}</li>`;
     }).join('');
   }
   const searchBox = () => `<label class="search">${I.search}<input class="q" type="text" dir="rtl" placeholder="جست‌وجوی فونت" aria-label="جست‌وجوی فونت" value="${esc(S.q)}"></label>`;
