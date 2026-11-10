@@ -1,11 +1,15 @@
 """Shared CPU gate accounting, plus per-process attribution for every window."""
 import json
+import os
 import sys
 import time
 import psutil
 
 sys.dont_write_bytecode = True
-sys.path.insert(0, r'C:\Users\Omid\.agents\tools')
+helper_dir = os.environ.get('CPU_BUDGET_HELPER_DIR')
+if not helper_dir:
+    raise SystemExit('Set CPU_BUDGET_HELPER_DIR to the directory containing cpu_budget.py.')
+sys.path.insert(0, helper_dir)
 from cpu_budget import ProcessTree, POLL_SECONDS, WINDOW_SECONDS, LIMITATION
 
 root = psutil.Process(int(sys.argv[1]))

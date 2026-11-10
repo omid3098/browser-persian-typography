@@ -6,7 +6,7 @@ direction for each block of text.
 
 - `docs/rules.md` is the reference for what the engine does and for its
   budgets. A change to behaviour changes that file in the same commit.
-- The rules come from `E:\w\t3code-persian-typography` (`runtime/`); keep the
+- The rules come from `https://github.com/omid3098/t3code-persian-typography` (`runtime/`); keep the
   shared text test (`dominantDirection`) identical to it.
 - The popup's design is Omid's choice. Show him a change to its look, and build
   it after he picks it.

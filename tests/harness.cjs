@@ -8,7 +8,8 @@ process.env.TEMP = process.env.TMP = path.join(work, "tmp")
 fs.mkdirSync(process.env.TEMP, { recursive: true })
 const { chromium } = require("playwright")
 
-const tweet = `Claude Duet امروز برام باز شد.\nالان یه بات Grok هست که بخشی از کارهای سیب‌کده رو می‌کنه. می‌خوام همون رو با Duet تست کنم و اگه دربیاد جابه‌جا شم؛ بقیه‌ی کارهام همین الان روی Claude هست و ترجیح می‌دم همه‌چی یه جا باشه.\nنتیجه رو می‌نویسم.`
+// Invented names and text; keep the Latin opening, embedded names and punctuation.
+const tweet = `Pebble Loom امروز آماده شد.\nاین یه ابزار Wisp هست که چندتا از طرح‌های دفترک رو می‌چینه. دارم یه برگه با Loom رنگ می‌کنم تا ببینم چطور می‌شه و اگه جا شد چاپش کنم؛ چندتا از برگ‌ها هنوز توی Pebble هست و برای تمرین بهتره اندازه‌ها هم یکسان بمونه.\nطرح تازه رو می‌کشم.`
 // X markup from the captured post, with extension styles removed and a local emoji.
 const emojiPost = `<div dir="auto" lang="fa" class="css-146c3p1 r-bcqeeo r-1ttztb7 r-qvutc0 r-4hwcpe r-a023e6 r-16dba41 r-bnwqim" id="emojiPersian" data-testid="tweetText" style="color: rgb(231, 233, 234); line-height: 1.55;"><span class="css-1jxf684 r-bcqeeo r-1ttztb7 r-qvutc0 r-poiln3">این یک متن ساختگی برای آزمون است </span><img alt="🚨" draggable="false" title="Police cars revolving light" class="r-4qtqp9 r-dflpy8 r-1kpi4qh r-k4bwe5 r-pp5qcn r-h9hxbl" src="/emoji.svg"><span class="css-1jxf684 r-bcqeeo r-1ttztb7 r-qvutc0 r-poiln3"> این جمله هم ساختگی است و فقط برای آزمون Sample و Demo نوشته شده است </span>...</div>`
 const chat = `<h2>پاسخ Claude</h2><p id="mixed">Hello امروز خوبه <code id="code">const فارسی = 1</code></p><ul id="list"><li>گزینه اول</li><li>گزینه دوم</li><li id="englishItem">English only</li></ul><ol><li>اول</li><li>second</li></ol><table id="data"><tr><th>نام</th><th>Name</th></tr><tr><td>داده</td><td>مقدار</td></tr><tr><td>۱۲۳</td><td id="englishCell">Data</td></tr></table><pre id="pre">const فارسی = 1</pre><p>یه خط English وسط متن</p>`

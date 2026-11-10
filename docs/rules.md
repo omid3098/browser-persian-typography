@@ -7,14 +7,13 @@ runtime knows T3 Code's markup; a web page has no such anchors, so each rule
 below says how it is decided on an unknown page. Where a rule differs from the
 T3 runtime, the reason is given.
 
-The promise, in Omid's words (2026-11-09): «کار کردن با افزونه هم فوق‌العاده
-راحت باشه طوری که کاربر اصلاً متوجه حضورش نشه ولی درعین حال به راحتی بتونه
-سایتی رو فعال یا غیرفعال کنه.»
+The extension must work without drawing attention to itself, while making it
+easy to enable or disable it for a site.
 
-The case that started it: a post on x.com that begins with "Claude Duet" and
-continues in Persian. X marks the post `dir="auto"`, the browser takes the
-direction from the first letter, and the whole post is laid out left to right
-with its words out of order, in the system's fallback font.
+A motivating case is a Persian post that starts with a Latin product name.
+When the page marks it `dir="auto"`, the browser takes the direction from the
+first letter. The whole post is laid out left to right, with its words out of
+order, in the system's fallback font.
 
 ## Font
 

@@ -81,23 +81,15 @@ Editing source files does not change the loaded copy. After an update, run `npm 
 These pages show where the extension stops, or where it does something you may not expect.
 
 <p align="center">
-  <img src="docs/screenshots/limit-site-name.png" width="400" alt="A search result without the extension and with it. With the extension, a site's Persian name has moved to the right end of its line, away from the site's icon.">
-  <br>
   <em>On a search results page, a site's Persian name moves to the right end of its line, away from the site's icon.</em>
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/limit-inline-snippet.png" width="610" alt="A search result with a Persian snippet, without the extension and with it. With the extension, the words are in the right order, but the snippet starts at the left edge of its line.">
-  <br>
   <em>A search result's snippet reads in the right order but starts at the left edge.</em>
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/limit-wikipedia-references.png" width="459" alt="A reference list on Persian Wikipedia, without the extension and with it. With the extension, an English entry that contains Persian digits is right-aligned with its number on the right. A purely English entry stays as it is.">
-  <br>
   <em>In Persian Wikipedia's reference lists, an English entry that contains Persian digits becomes right-aligned with its number on the right. A purely English entry stays as it is.</em>
-  <br>
-  <sub>The text shown is from Persian Wikipedia, licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.</sub>
 </p>
 
 <p align="center">
@@ -177,7 +169,7 @@ npm run test:popup
 npm run check:live
 ```
 
-`npm run budget:idle` watches two browsers for about six minutes each. It took 19 minutes in one run, so give it a cap of 25 minutes. It imports the shared `cpu_budget.py` helper from the maintainer's local tools folder, which is not in this repository, so it runs only on the maintainer's computer.
+`npm run budget:idle` watches two browsers for about six minutes each. It took 19 minutes in one run, so give it a cap of 25 minutes. Before running it, set the `CPU_BUDGET_HELPER_DIR` environment variable to the directory containing the shared `cpu_budget.py` helper. `tests/idle-sample.py` reads that variable; the helper is not included in this repository.
 
 What the checks do:
 
@@ -204,5 +196,6 @@ Read the [privacy policy](PRIVACY.md).
 
 - The font is [Vazirmatn](https://github.com/rastikerdar/vazirmatn), copyright 2015 The Vazirmatn Project Authors, under the SIL Open Font License 1.1. The licence text is in [`fonts/OFL.txt`](fonts/OFL.txt) and ships with the extension.
 - The direction rules come from [t3code-persian-typography](https://github.com/omid3098/t3code-persian-typography).
-- The emoji in the first picture are [Twemoji](https://github.com/twitter/twemoji) graphics, copyright Twitter, Inc and other contributors, under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). They appear only in that picture, not in the extension.
+- The people, handles and texts in both demo pictures are invented.
+- The emoji in both demo pictures are [Twemoji](https://github.com/twitter/twemoji) graphics by Twitter, Inc and other contributors, under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The graphics are resized and embedded in the pictures; they are not part of the extension.
 - The extension is released under the MIT licence. See [`LICENSE`](LICENSE).
