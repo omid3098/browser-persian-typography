@@ -48,6 +48,8 @@ async function readStored() {
 }
 
 const siteOn = () => !state.off.includes(state.host)
+// The switch already shows this site; the list holds the other switched-off sites.
+const others = () => state.off.filter(host => host !== state.host)
 const fontName = font => font.type === "system" ? font.family : BUNDLED_NAME
 const sameFont = (a, b) => a.type === b.type && a.family === b.family
 
@@ -98,20 +100,22 @@ function paintMain() {
     main.state.textContent = on ? "روشن" : "خاموش"
   }
   main.fontValue.textContent = fontName(state.font)
-  main.sitesValue.textContent = fa(state.off.length)
-  main.sites.hidden = state.off.length === 0
+  main.sitesValue.textContent = fa(others().length)
+  main.sites.hidden = others().length === 0
 }
 
-// A host name that does not fit at 32 px steps down; the last step wraps.
+// A host name that does not fit at 32 px steps down; if even 20 px is too wide it takes the
+// full width above the state and the switch, and may break after a dot or a hyphen.
 function fitHost() {
   for (const [size, line] of [[32, 40], [24, 32], [20, 28]]) {
     main.host.style.fontSize = `${size}px`
     main.host.style.lineHeight = `${line}px`
     if (main.host.scrollWidth <= main.host.clientWidth) return
   }
-  main.host.classList.add("wrap")
   main.host.style.fontSize = ""
   main.host.style.lineHeight = ""
+  main.host.closest(".b-site").classList.add("long")
+  main.host.replaceChildren(...state.host.split(/(?<=[.-])/).flatMap((part, i) => i ? [h("wbr"), part] : [part]))
 }
 
 async function toggleSite() {
@@ -308,11 +312,12 @@ function showSites() {
 }
 
 function syncSites() {
-  if (state.off.length === 0) return showMain("font")
+  const sites = others()
+  if (sites.length === 0) return showMain("font")
   const { list } = sitesView
   const shown = [...list.children].map(li => li.dataset.host)
-  if (shown.join("\n") === state.off.join("\n")) return
-  list.replaceChildren(...state.off.map(host => {
+  if (shown.join("\n") === sites.join("\n")) return
+  list.replaceChildren(...sites.map(host => {
     const li = h("li", { class: "srow" }, h("span", { class: "host", dir: "ltr" }, host),
       h("button", { class: "btn", type: "button", "aria-label": `روشن کن: ${host}` }, "روشن کن"))
     li.dataset.host = host
@@ -324,7 +329,7 @@ function syncSites() {
 async function switchOn(li, host) {
   const next = li.nextElementSibling ?? li.previousElementSibling
   state.off = state.off.filter(site => site !== host)
-  if (state.off.length === 0) showMain("font")
+  if (others().length === 0) showMain("font")
   else {
     li.remove()
     ;(next?.querySelector(".btn") ?? sitesView.back).focus()

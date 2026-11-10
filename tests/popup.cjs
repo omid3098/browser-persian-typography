@@ -147,11 +147,14 @@ const probe = 'ابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی�
     await popup.keyboard.press('Escape'); assert.equal(await popup.locator(':focus .k').innerText(), 'فونت')
     await h.setting('setSite', { site: h.base, enabled: false })
     await h.setting('setSite', { site: 'example.com', enabled: false })
+    await h.setting('setSite', { site: 'example.org', enabled: false })
     await popup.locator('.brow').nth(1).waitFor({ state: 'visible' })
     await popup.keyboard.press('Tab'); await popup.keyboard.press('Enter')
     await popup.keyboard.press('Tab'); await popup.keyboard.press('Enter')
+    // The list holds the other switched-off sites; this tab's own site stays off and is not listed.
     assert.equal(await popup.locator('.srow').count(), 1)
-    assert(!((await stored()).disabledSites.includes('127.0.0.1')))
+    assert(!((await stored()).disabledSites.includes('example.com')))
+    assert((await stored()).disabledSites.includes('127.0.0.1'))
     await popup.keyboard.press('Enter')
     await popup.locator('[data-view="main"]').waitFor()
     assert.equal(await popup.locator('.brow').nth(1).isVisible(), false)
@@ -194,6 +197,7 @@ const probe = 'ابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی�
     const restrictedId = await h.worker.evaluate(async () => (await chrome.tabs.query({ active: true, currentWindow: true }))[0].id)
     for (const scheme of ['light', 'dark']) {
       await h.setting('setSite', { site: h.base, enabled: true })
+      await h.setting('setSite', { site: 'example.com', enabled: false })
       popup = await openPopup(targetId, scheme)
       await shot(popup, `main-on-${scheme}`)
       await popup.getByRole('switch').click(); await h.settle()

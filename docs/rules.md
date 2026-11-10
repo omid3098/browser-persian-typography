@@ -154,10 +154,18 @@ result over a budget is a failure, not a cost to weigh.
 The toolbar opens the chosen **B · پنجرهٔ آروم** popup. Its icon is coloured
 when the current site is on and grey when it is off.
 
+- **Window edge.** Chrome draws the toolbar popup's window itself: square
+  corners and a 1 px frame that a page cannot round. So the popup's bands and
+  rows run flush to the edge and no rounded shape touches it; only controls
+  inside (switch, search field, buttons) are rounded.
 - **Main view.** The current host, its on/off switch and its state in words
-  come first. The font row opens the font view. The switched-off-sites row
-  appears only when there are sites to show. On browser internal pages and
-  extension stores the site block is hidden.
+  come first, in a band flush to the top edge. A host name too long for 20 px
+  takes the full width and breaks after dots and hyphens; the state and switch
+  sit on a row below it. The font row opens the font view. The
+  switched-off-sites row appears only when there are other sites to show (the
+  switch already shows this one), so switching a site off does not resize the
+  window. On browser internal pages and extension stores the site block is
+  hidden.
 - **Font view.** Search the bundled Vazirmatn and installed fonts from
   `chrome.fontSettings`; only fonts able to draw Persian are listed. Names
   use the popup font; only «نمونه» uses the row's font. Pointer hover or
