@@ -28,13 +28,16 @@ const pages = {
   stream: '<section id="stream"></section>',
   big: Array.from({ length: 20000 }, (_, i) => `<span>English text ${i}</span>`).join("")
 }
+pages.shadow = '<div id="chatHost"></div><script src="/shadow-fixture.js"></script>'
+pages.shadowLatin = `<div id="latinHost"><template shadowrootmode="open"><div id="nestedLatin"><template shadowrootmode="open"><input id="emptyInput"><textarea id="emptyTextarea" style="font-family:Arial"></textarea><div id="emptyEditor" contenteditable="true"></div>${pages.big}</template></div></template></div>`
 async function start(name, { extension = true } = {}) {
   const server = http.createServer((req, res) => {
+    if (req.url === '/shadow-fixture.js') { res.setHeader('Content-Type', 'text/javascript'); res.end(fs.readFileSync(path.join(__dirname, 'shadow-fixture.js'))); return }
     if (req.url === "/page.css") { res.setHeader("Content-Type", "text/css"); res.end('body{font-family:Arial,sans-serif;margin:20px}#tweet{white-space:pre-line}.emoji-posts{display:flex;flex-direction:column;background:#000}.emoji-posts [data-testid="tweetText"]{display:block;font-family:Vazirmatn,Tahoma,Arial,sans-serif}.emoji-posts span{display:inline;position:relative}.emoji-posts img{display:inline-block;width:1em;height:1em}'); return }
     if (req.url === "/emoji.svg") { res.setHeader("Content-Type", "image/svg+xml"); res.end('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill="red" d="M4 12V6a4 4 0 0 1 8 0v6z"/></svg>'); return }
     const key = req.url.slice(1).split("?")[0]
     res.setHeader("Content-Type", "text/html; charset=utf-8")
-    if (key.startsWith("tweet")) res.setHeader("Content-Security-Policy", "default-src 'self'; style-src 'self'; font-src 'self'; script-src 'self'; frame-src *")
+    if (key.startsWith("tweet") || key === 'shadow') res.setHeader("Content-Security-Policy", "default-src 'self'; style-src 'self'; font-src 'self'; script-src 'self'; frame-src *")
     res.end(`<!doctype html><html${key === "native" ? ' dir="rtl"' : ""}><head><meta charset="utf-8"><link rel="stylesheet" href="/page.css"></head><body>${(pages[key] || pages.latin).replaceAll("PORT", server.address().port)}</body></html>`)
   })
   await new Promise(resolve => server.listen(0, "0.0.0.0", resolve))
@@ -99,12 +102,17 @@ async function start(name, { extension = true } = {}) {
   return { context, worker, page, base, setting, settle, open, server,
     async close() { await context.close(); await new Promise(resolve => server.close(resolve)) } }
 }
-async function fonts(context, page, selector) {
+async function fonts(context, page, selector, shadow = false) {
   await page.evaluate(() => document.fonts.ready)
   const client = await context.newCDPSession(page)
   await client.send("DOM.enable"); await client.send("CSS.enable")
-  const { root } = await client.send("DOM.getDocument")
-  const { nodeId } = await client.send("DOM.querySelector", { nodeId: root.nodeId, selector })
+  const { root } = await client.send("DOM.getDocument", shadow ? { depth: -1, pierce: true } : {})
+  function find(node) {
+    const attrs = node.attributes || []
+    if (attrs.some((attr, i) => i % 2 === 0 && attr === 'id' && attrs[i + 1] === selector.slice(1))) return node
+    for (const child of [...(node.children || []), ...(node.shadowRoots || [])]) { const found = find(child); if (found) return found }
+  }
+  const { nodeId } = shadow ? find(root) : await client.send("DOM.querySelector", { nodeId: root.nodeId, selector })
   const result = (await client.send("CSS.getPlatformFontsForNode", { nodeId })).fonts
   await client.detach()
   return result

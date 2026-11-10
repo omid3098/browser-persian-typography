@@ -12,6 +12,8 @@
   const RANGES = 'U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC'
   const originals = new Map()
   const dirty = new Set()
+  const shadowRoots = new Set()
+  const scans = []
   let config, frame = 0, walker = null, fontPromise, pendingFonts = 0, pendingStates = 0
   let previewFont = null, previewPort = null, updateVersion = 0
   const fontProfiles = new Map()
@@ -68,8 +70,21 @@
     const root = el.closest(EDIT)
     return root?.isContentEditable ? root : null
   }
+  function closestAcrossRoots(el, selector) {
+    for (let current = el; current; current = current.getRootNode().host) {
+      const match = current.closest(selector)
+      if (match) return match
+    }
+    return null
+  }
+  function containsAcrossRoots(root, el) {
+    for (let current = el; current; current = current.getRootNode().host) {
+      if (root === current || root.contains(current)) return true
+    }
+    return false
+  }
   function skipped(el) {
-    return !el || el.closest(SKIP) || /monospace/i.test(getComputedStyle(el).fontFamily)
+    return !el || closestAcrossRoots(el, SKIP) || /monospace/i.test(getComputedStyle(el).fontFamily)
   }
   function blockFor(el) {
     let current = el
@@ -86,7 +101,7 @@
     return el && !/^(HTML|BODY)$/.test(el.tagName) ? el : null
   }
   function readable(el, ownItem = false) {
-    const walk = document.createTreeWalker(el, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
+    const walk = document.createTreeWalker(el.shadowRoot || el, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
       acceptNode(node) {
         if (node.nodeType === 1) return node.matches(SKIP) || (node !== el && node.matches(EDIT)) || (ownItem && node.matches("ul,ol,table")) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_SKIP
         return NodeFilter.FILTER_ACCEPT
@@ -100,7 +115,7 @@
     if (!el || /^(HTML|BODY)$/.test(el.tagName)) return false
     if (/(?:flex|grid)/.test(getComputedStyle(el).display)) return false
     // A container of other blocks is never made into a direction boundary.
-    return !Array.from(el.children).some(child => !child.matches(SKIP) && !INLINE_DISPLAY.test(getComputedStyle(child).display))
+    return !Array.from((el.shadowRoot || el).children).some(child => !child.matches(SKIP) && !INLINE_DISPLAY.test(getComputedStyle(child).display))
   }
   function direction(el, dir) {
     if (el.getAttribute("dir") !== "rtl") attr(el, "dir", dir)
@@ -181,22 +196,30 @@
       }
     }
     if (root.nodeType === 3) {
-      if (ARABIC.test(root.data)) candidate(root.parentElement)
+      if (ARABIC.test(root.data)) candidate(root.parentElement || root.getRootNode().host)
       return
     }
-    if (root.nodeType !== 1 && root !== document) return
+    if (root.nodeType !== 1 && root.nodeType !== 11 && root !== document) return
     if (root.nodeType === 1 && root.matches(`${INPUT},${EDIT}`)) fields.add(editable(root) || root)
     for (const field of root.querySelectorAll(`${INPUT},${EDIT}`)) {
       if (!editable(field) || editable(field) === field) fields.add(field)
     }
     const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
-    for (let node; (node = walk.nextNode());) if (ARABIC.test(node.data)) candidate(node.parentElement)
+    for (let node; (node = walk.nextNode());) if (ARABIC.test(node.data)) candidate(node.parentElement || node.getRootNode().host)
+    const elements = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT)
+    function shadow(el) {
+      if (!el.shadowRoot) return
+      shadowRoots.add(el.shadowRoot)
+      collect(el.shadowRoot, holders, blocks, groups, fields)
+    }
+    if (root.nodeType === 1) shadow(root)
+    for (let el; (el = elements.nextNode());) shadow(el)
   }
   function apply(roots) {
     const holders = new Set(), blocks = new Set(), groups = new Set(), fields = new Set()
     // Restore before reading computed styles; don't read our own earlier font stack.
     for (const el of originals.keys()) {
-      if (!el.isConnected || roots.some(root => root === el || root.contains?.(el))) restore(el)
+      if (!el.isConnected || roots.some(root => containsAcrossRoots(root, el))) restore(el)
     }
     for (const root of roots) collect(root, holders, blocks, groups, fields)
     const inlineDirections = new Map()
@@ -238,7 +261,7 @@
     }
     for (const el of holders) font(el)
     for (const el of fields) {
-      if (el.closest(SKIP)) continue
+      if (closestAcrossRoots(el, SKIP)) continue
       if (!pageHasPersian && !ARABIC.test(el.value || el.textContent)) continue
       if (el.matches(INPUT)) {
         if (!el.hasAttribute("dir") && getComputedStyle(el).direction !== "rtl") attr(el, "dir", "auto")
@@ -246,11 +269,20 @@
       font(el)
     }
   }
+  const observation = { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["dir", "style", "class", "contenteditable"] }
   function observe() {
-    observer.observe(document, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["dir", "style", "class", "contenteditable"] })
+    observer.observe(document, observation)
+    for (const root of shadowRoots) {
+      if (root.host.isConnected) observer.observe(root, observation)
+      else shadowRoots.delete(root)
+    }
+  }
+  function scan(root) {
+    for (const field of root.querySelectorAll(`${INPUT},${EDIT}`)) dirty.add(field)
+    return { elements: document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT), text: document.createTreeWalker(root, NodeFilter.SHOW_TEXT) }
   }
   function mark(node) {
-    let el = node.nodeType === 1 || node === document ? node : node.parentElement
+    let el = node.nodeType === 1 || node.nodeType === 11 || node === document ? node : node.parentElement
     if (!el) return
     for (let parent = el; parent; parent = parent.parentElement) if (originals.has(parent)) el = parent
     // Include the nearest list so Latin siblings follow a streaming Persian item.
@@ -277,15 +309,25 @@
       // Pure Latin pages need only a cheap text scan, sliced across frames.
       const roots = []
       let node, scanned = 0
-      while ((node = walker.nextNode())) {
-        if (ARABIC.test(node.data)) roots.push(node.parentElement)
+      while (walker) {
+        if (walker.elements) {
+          node = walker.elements.nextNode()
+          if (!node) { walker.elements = null; continue }
+          if (node.shadowRoot) {
+            shadowRoots.add(node.shadowRoot)
+            scans.push(scan(node.shadowRoot))
+          }
+        } else {
+          node = walker.text.nextNode()
+          if (!node) { walker = scans.shift() || null; continue }
+          if (ARABIC.test(node.data)) roots.push(node.parentElement || node.getRootNode().host)
+        }
         if (++scanned % 128 === 0 && performance.now() - start > 4) break
       }
-      if (!node) {
-        walker = null
-      }
       apply(roots)
-      if (!walker && pageHasPersian) for (const field of document.querySelectorAll(`${INPUT},${EDIT}`)) dirty.add(field)
+      if (!walker && pageHasPersian) {
+        for (const root of [document, ...shadowRoots]) for (const field of root.querySelectorAll(`${INPUT},${EDIT}`)) dirty.add(field)
+      }
     }
     const roots = Array.from(dirty).filter(el => el.isConnected)
     dirty.clear()
@@ -312,7 +354,7 @@
     const start = performance.now()
     observer.disconnect()
     if (frame) cancelAnimationFrame(frame)
-    frame = 0; walker = null; dirty.clear()
+    frame = 0; walker = null; scans.length = 0; dirty.clear(); shadowRoots.clear()
     pageHasPersian = false
     for (const el of originals.keys()) restore(el)
     for (const profile of fontProfiles.values()) for (const face of profile.faces) document.fonts.delete(face)
@@ -323,8 +365,7 @@
       metrics.total += time; metrics.longest = Math.max(metrics.longest, time)
       return
     }
-    walker = document.createTreeWalker(document, NodeFilter.SHOW_TEXT)
-    for (const field of document.querySelectorAll(`${INPUT},${EDIT}`)) dirty.add(field)
+    walker = scan(document)
     observe()
     frame = requestAnimationFrame(flush)
     const time = performance.now() - start
@@ -349,8 +390,16 @@
     })
   })
   document.addEventListener("input", event => {
-    const el = event.target
-    if (el instanceof Element && el.matches(INPUT) && (ARABIC.test(el.value) || originals.has(el))) mark(el)
+    const el = event.composedPath()[0]
+    if (!(el instanceof Element)) return
+    const field = editable(el) || (el.matches(INPUT) ? el : null)
+    if (field && (ARABIC.test(field.value || field.textContent) || originals.has(field))) mark(field)
+  }, true)
+  document.addEventListener('__persianTypographyShadow', event => {
+    if (!config?.enabled) return
+    const target = event.composedPath()[0]
+    // The page can send this event too; only inspect actual connected DOM.
+    if (target instanceof Element || target instanceof ShadowRoot) mark(target)
   }, true)
   metrics.total += performance.now() - bootStart
   update()

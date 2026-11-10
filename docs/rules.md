@@ -116,6 +116,12 @@ with its words out of order, in the system's fallback font.
   infinite scroll, a page that swaps its content without a reload) is decided
   as it arrives. No polling and no timers: a `MutationObserver`, batched per
   frame.
+  Open shadow roots follow the same F1–F6 and D1–D10 rules, at any nesting
+  depth, including roots with only adopted style sheets. Each root is watched
+  by the same observer. A document-start hook in the page's JavaScript world
+  reports `attachShadow` calls without reading text; initial scans and inserted
+  subtrees also find existing and declarative roots. Input events use their
+  original target inside an open root, so typing activates its fields too.
 - **B2. Off means untouched.** With the site switched off, or after it is
   switched off on an open page, the page is exactly as it was written: every
   `dir`, style and attribute the extension added is taken back, at once and
@@ -201,4 +207,7 @@ two measured runs.
 Source edits do not change that loadable copy; only another build does.
 The size budget measures every file in `dist/`.
 
-Not in the first version: text inside shadow DOM, Firefox, mobile browsers.
+Known limits: closed shadow roots cannot be reached. A page that replaces or
+bypasses the document-start `attachShadow` hook can hide a root attached to an
+existing host until a later observed mutation causes that subtree to be scanned.
+Firefox and mobile browsers are not in the first version.

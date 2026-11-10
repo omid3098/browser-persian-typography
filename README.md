@@ -6,7 +6,7 @@ Persian text block gets a right-to-left direction, including posts beginning
 with an English name. Page layout, centred headings and code keep their order.
 
 The engine follows [docs/rules.md](docs/rules.md). It handles new and streaming
-text, lists, data tables, editable roots and frames. It never rewrites text or
+text, lists, data tables, editable roots, nested open shadow roots and frames. It never rewrites text or
 contacts a server. Fonts load from the extension even on pages with strict
 Content Security Policy. Settings stay in `storage.local` on this computer.
 
@@ -41,7 +41,7 @@ to restore the saved font; click or press Enter to save. Arrow keys move
 through font rows. Font names stay readable in the popup's own font.
 
 Browser internal pages and browser extension stores do not allow content
-scripts, so the popup hides the site switch there. Shadow DOM and Firefox are outside this version.
+scripts, so the popup hides the site switch there. Closed shadow roots and Firefox are outside this version.
 Font widths can change line wrapping. The replacement font matches the page's
 vertical measures, allowing room for whole letters if they cannot fit. Layout
 containers are not mirrored. A page's explicit monospace fonts remain unchanged, including a
