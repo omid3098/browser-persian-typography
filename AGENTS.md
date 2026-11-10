@@ -8,8 +8,8 @@ direction for each block of text.
   budgets. A change to behaviour changes that file in the same commit.
 - The rules come from `E:\w\t3code-persian-typography` (`runtime/`); keep the
   shared text test (`dominantDirection`) identical to it.
-- `design/mocks/` holds the interface mocks. The interface is built only from
-  the mock Omid chose.
+- The popup's design is Omid's choice. Show him a change to its look, and build
+  it after he picks it.
 - Tests run headless, with a browser profile of their own under
   `.agent-work/`. Never open a visible browser window.
 - The extension never rewrites page text, uses no network and loads no remote
