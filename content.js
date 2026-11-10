@@ -229,8 +229,10 @@
     }
     for (const root of roots) collect(root, holders, blocks, groups, fields)
     const inlineDirections = new Map()
+    const svgDirections = new Map()
     for (const el of new Set([...blocks, ...groups].map(block => block instanceof ShadowRoot ? block.host : block))) {
       for (const box of [...el.querySelectorAll("*"), ...(el.shadowRoot?.querySelectorAll("*") || [])]) {
+        if (box.localName === "svg") svgDirections.set(box, getComputedStyle(box).direction)
         if (/^inline-(?:block|flex|grid|table)$/.test(getComputedStyle(box).display) && !skipped(box) && !editable(box) && blockDirection(box) !== "rtl") inlineDirections.set(box, getComputedStyle(box).direction)
       }
     }
@@ -255,6 +257,7 @@
       if (dir === "rtl" || (dir === "ltr" && Array.from(turned).some(group => group.contains(el)))) direction(el, dir)
       if (dir === "rtl") {
         for (const code of [...el.querySelectorAll(CODE), ...(el.shadowRoot?.querySelectorAll(CODE) || [])]) {
+          if (code.localName === "svg" && svgDirections.get(code) !== "ltr") continue
           prop(code, "direction", "ltr")
           prop(code, "unicode-bidi", "isolate")
           if (/^(PRE|CODE|KBD|SAMP)$/.test(code.tagName)) prop(code, "text-align", "left")

@@ -98,10 +98,13 @@ with its words out of order, in the system's fallback font.
   web (x.com writes `auto`, LinkedIn wraps post text in `dir="ltr"`). Differs
   from T3, which never touches an element that has a `dir`. `bdo` is never
   touched.
-- **D8. What stays LTR.** `pre`, `code`, `kbd`, `samp`, `svg`, maths
+- **D8. What stays LTR.** `pre`, `code`, `kbd`, `samp`, maths
   (`math`, `.katex`, MathJax), terminals and code editors (`.xterm`,
   `.cm-editor`, `.monaco-editor`) are skipped, and inside an RTL block they
-  stay left to right.
+  stay left to right. `svg` is skipped too, but keeps the direction the page
+  gave it: only an originally LTR SVG gets an LTR write when its surrounding
+  block turns RTL. An already RTL SVG gets no write, keeping logical icon
+  margins on the page's original side.
 - **D9. Editable areas.** Only the root of an editable area is managed: its
   direction comes from its whole text, and `auto` while it is empty. The
   editor's inner nodes belong to the editor. Plain text fields and `textarea`

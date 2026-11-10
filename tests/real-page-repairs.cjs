@@ -10,6 +10,8 @@ pages.hiddenLogo = '<header><div style="display:flex"><div><h1><a id="logo" styl
 pages.addressLines = '<div id="addressBlock">https://example.test › lessons › درس-ساختگی-ab123</div><div style="display:flex"><span id="addressRun" dir="ltr"><span>https://<span>example.test</span></span><span> › lessons › درس-ساختگی-ab123</span></span></div><p id="addressProse">https://example.test این جمله ساختگی است</p>'
 pages.addressBreaks = '<p id="breakBlock">https://example.test<br>ممنون</p><div style="display:flex"><span id="breakRun" dir="ltr"><a>https://<span>example.test</span></a><br>ممنون</span></div><p id="breakSentence">https://example.test<br>این جمله ساختگی است</p>'
 pages.fieldStyles = '<style>textarea,input{font:16px Arial,sans-serif}</style><p>متن ساختگی</p><div dir="rtl" style="display:flex"><textarea id="bareTextarea"></textarea><input id="bareInput"><input id="emptyStyle" style=""><input id="authoredStyle" style="color:navy"><input id="changedStyle"></div>'
+pages.svgSpacing = '<style>html{direction:rtl}svg{display:block;width:16px;height:16px;margin-inline-end:8px}button{display:inline-flex}button>span{display:block}</style><article><div dir="rtl">متن ساختگی <button><svg viewBox="0 0 16 16"><path d="M0 0h16v16H0z"/></svg><span><span id="svgLabel">برچسب ساختگی</span></span></button></div></article>'
+pages.svgTurn = pages.svgSpacing.replace('html{direction:rtl}', '').replace('dir="rtl"', 'id="svgBlock"')
 
 ;(async () => {
   const h = await start('real-page-repairs')
@@ -24,6 +26,27 @@ pages.fieldStyles = '<style>textarea,input{font:16px Arial,sans-serif}</style><p
   const css = (selector, key) => page.locator(selector).evaluate((el, key) => getComputedStyle(el)[key], key)
   try {
     await setting('setFont', { font: { type: 'bundled' } })
+    await test('R9 SVG keeps its original direction and RTL icon gap', async () => {
+      await enable(false); await open('svgSpacing'); const off = await page.content()
+      const gap = () => page.locator('button').evaluate(el => {
+        const icon = el.querySelector('svg').getBoundingClientRect(), label = el.querySelector('#svgLabel').getBoundingClientRect()
+        return Math.max(icon.left - label.right, label.left - icon.right)
+      })
+      const before = await gap()
+      assert.equal(before, 8)
+      await enable(true); await settle()
+      assert.equal(await gap(), before, 'Native RTL SVG keeps the gap on the label side')
+      assert.equal(await css('svg', 'direction'), 'rtl')
+      assert.equal(await page.locator('svg').evaluate(el => el.style.direction), '', 'Native RTL SVG gets no direction write')
+      await enable(false); await settle()
+      assert.equal(await gap(), before); assert.equal(await page.content(), off)
+      await open('svgTurn'); const ltrOff = await page.content()
+      assert.equal(await css('svg', 'direction'), 'ltr')
+      await enable(true); await settle()
+      assert.equal(await css('#svgBlock', 'direction'), 'rtl', 'The surrounding LTR block actually turns')
+      assert.equal(await css('svg', 'direction'), 'ltr', 'Originally LTR SVG stays LTR inside a turned block')
+      await enable(false); await settle(); assert.equal(await page.content(), ltrOff)
+    })
     await test('R8 address followed by a line break and Persian follows D1', async () => {
       await enable(false); await open('addressBreaks'); const off = await page.content()
       await enable(true); await settle()
