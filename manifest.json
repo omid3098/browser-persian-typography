@@ -3,11 +3,12 @@
   "name": "Persian Typography",
   "version": "0.1.0",
   "description": "Persian letters in Vazirmatn, with a direction for each text block.",
-  "permissions": ["storage"],
+  "permissions": ["storage", "fontSettings"],
   "host_permissions": ["<all_urls>"],
   "background": { "service_worker": "background.js", "type": "module" },
   "action": {
-    "default_title": "Persian Typography: click to switch this site",
+    "default_title": "Persian Typography",
+    "default_popup": "popup/popup.html",
     "default_icon": { "16": "icons/on.png", "32": "icons/on.png" }
   },
   "content_scripts": [{

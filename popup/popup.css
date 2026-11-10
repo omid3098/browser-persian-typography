@@ -1,0 +1,77 @@
+@font-face{font-family:"Vazirmatn";src:url("../fonts/Vazirmatn.woff2") format("woff2");font-weight:100 900;font-display:block}
+
+:root{
+  color-scheme:light dark;
+  --surf:#ffffff; --bg2:#f1f3f4;
+  --ink:#171717; --ink2:#4d5258; --ink3:#62676d; --line:#e3e5e8; --line2:#c4c7cc; --hover:#f1f2f4; --point:#e3e5e9;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --surf:#202124; --bg2:#0e0e0f;
+    --ink:#ececed; --ink2:#b4b8bd; --ink3:#a5abb1; --line:#3a3c40; --line2:#5a5d62; --hover:#2d2f33; --point:#3b3e43;
+  }
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none !important}
+html{background:var(--surf)}
+body{width:320px;background:var(--surf);color:var(--ink);font:400 16px/1.5 "Vazirmatn","Segoe UI",sans-serif;scrollbar-width:thin}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;text-align:start}
+ul{list-style:none}
+svg{display:block;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
+
+.pop{width:320px;padding:8px;display:flex;flex-direction:column}
+.pop.tall{height:440px}
+.host{direction:ltr;unicode-bidi:isolate;text-align:right}
+
+/* switch */
+.sw{width:52px;height:32px;border-radius:16px;background:var(--line2);position:relative;flex:none}
+.sw i{position:absolute;top:4px;inset-inline-start:4px;width:24px;height:24px;border-radius:12px;background:var(--surf)}
+.sw[aria-checked="true"]{background:var(--ink)}
+.sw[aria-checked="true"] i{inset-inline-start:24px}
+
+/* main view */
+.b-site{display:flex;align-items:center;gap:16px;padding:16px;min-height:96px;background:var(--bg2);border-radius:12px;margin-bottom:8px}
+.b-site .who{flex:1;min-width:0}
+.b-site .host{font-size:32px;font-weight:600;line-height:40px;white-space:nowrap}
+.b-site .host.wrap{font-size:20px;line-height:28px;white-space:normal;overflow-wrap:anywhere}
+.b-site .state{font-size:14px;color:var(--ink3);line-height:20px}
+.b-rows.with-site{border-top:1px solid var(--line);padding-top:8px}
+.brow{width:100%;min-height:56px;padding:8px 16px;display:flex;align-items:center;gap:8px;border-radius:12px}
+.brow:hover{background:var(--hover)}
+.brow .k{flex:1}
+.brow .v{color:var(--ink3);min-width:0;overflow-wrap:anywhere}
+.brow svg{width:20px;height:20px;color:var(--ink3)}
+
+/* headers, back arrow */
+.hd{display:flex;align-items:center;gap:8px;height:56px;padding:0 8px;font-size:18px;font-weight:600}
+.hd .tt{flex:1;font-size:24px;font-weight:700;line-height:32px}
+.ib{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--ink2)}
+.ib svg{width:20px;height:20px}
+.ib:hover{background:var(--hover)}
+
+/* font view */
+.search{display:flex;align-items:center;gap:8px;height:40px;margin:0 8px 8px;padding:0 12px;border-radius:12px;border:1px solid var(--line2);color:var(--ink3)}
+.search:focus-within{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.search svg{width:20px;height:20px}
+.search input{flex:1;min-width:0;height:100%;border:0;outline:0;background:none;font:inherit;color:var(--ink)}
+.search input::placeholder{color:var(--ink3);opacity:1}
+.flist{position:relative;flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:var(--line2) transparent}
+.flist li{content-visibility:auto;contain-intrinsic-size:auto 48px}
+.frow{width:100%;min-height:48px;padding:8px 16px;display:flex;align-items:center;gap:8px;border-radius:8px}
+.frow:hover,.frow.pointed{background:var(--point)}
+.frow .l{flex:1;display:flex;align-items:center;gap:8px;min-width:0}
+.frow .nm{font-size:18px;min-width:0;overflow-wrap:anywhere}
+.frow .smp{font-size:16px;color:var(--ink2);white-space:nowrap}
+.frow .ck{width:20px;height:20px;color:var(--ink)}
+.frow .ck svg{width:20px;height:20px}
+.tag{font-size:12px;line-height:20px;padding:0 8px;border-radius:10px;background:var(--bg2);color:var(--ink2);white-space:nowrap}
+.none{padding:16px;color:var(--ink3)}
+
+/* sites view */
+.sites{max-height:368px;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:var(--line2) transparent}
+.srow{min-height:56px;padding:8px 8px 8px 16px;display:flex;align-items:center;gap:8px;border-radius:8px}
+.srow .host{flex:1;min-width:0;font-size:16px;overflow-wrap:anywhere}
+.btn{height:32px;padding:0 12px;border-radius:16px;background:var(--bg2);font-size:14px;font-weight:500;white-space:nowrap}
+.btn:hover{background:var(--point)}

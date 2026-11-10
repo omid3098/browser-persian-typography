@@ -35,7 +35,7 @@ async function start(name, { extension = true } = {}) {
   const profile = path.join(work, `profile-${name}`)
   const context = await chromium.launchPersistentContext(profile, {
     channel: "chromium", headless: true, viewport: { width: 1440, height: 900 },
-    args: [...(extension ? [`--disable-extensions-except=${root}`, `--load-extension=${root}`] : ["--disable-extensions"]), "--no-first-run", "--disable-background-networking", "--disable-gpu"]
+    args: [...(extension ? [`--disable-extensions-except=${path.join(root, 'dist')}`, `--load-extension=${path.join(root, 'dist')}`] : ["--disable-extensions"]), "--no-first-run", "--disable-background-networking", "--disable-gpu"]
   })
   const worker = extension ? context.serviceWorkers()[0] || await context.waitForEvent("serviceworker") : null
   const base = `http://127.0.0.1:${server.address().port}`

@@ -13,6 +13,7 @@
   const originals = new Map()
   const dirty = new Set()
   let config, frame = 0, walker = null, fontPromise, pendingFonts = 0
+  let previewFont = null, previewPort = null, updateVersion = 0
   const fontProfiles = new Map()
   let fontCanvas
   let pageHasPersian = false
@@ -281,10 +282,13 @@
     if (walker && !frame) frame = requestAnimationFrame(flush)
   }
   async function update() {
+    const version = ++updateVersion
     const next = await chrome.runtime.sendMessage({ type: "state" })
     if (!next || next.error) return
     // Scan the completed parse once; parser mutations otherwise rescan the same page.
     if (document.readyState === "loading") await new Promise(resolve => document.addEventListener("DOMContentLoaded", resolve, { once: true }))
+    if (version !== updateVersion) return
+    if (previewFont) next.font = previewFont
     const start = performance.now()
     observer.disconnect()
     if (frame) cancelAnimationFrame(frame)
@@ -306,7 +310,24 @@
     const time = performance.now() - start
     metrics.total += time; metrics.longest = Math.max(metrics.longest, time)
   }
-  chrome.storage.onChanged.addListener((_changes, area) => { if (area === "local") update() })
+  chrome.storage.onChanged.addListener((changes, area) => { if (area === "local" && (changes.disabledSites || changes.font)) update() })
+  chrome.runtime.onConnect.addListener(port => {
+    if (port.name !== "preview" || port.sender?.id !== chrome.runtime.id) return
+    previewPort = port
+    port.onMessage.addListener(message => {
+      if (previewPort !== port) return
+      const font = message.font
+      if (font !== null && font?.type !== "bundled" && !(font?.type === "system" && typeof font.family === "string" && font.family.trim() && font.family.length <= 200)) return
+      previewFont = font
+      update()
+    })
+    port.onDisconnect.addListener(() => {
+      if (previewPort !== port) return
+      previewPort = null
+      previewFont = null
+      update()
+    })
+  })
   document.addEventListener("input", event => {
     const el = event.target
     if (el instanceof Element && el.matches(INPUT) && (ARABIC.test(el.value) || originals.has(el))) mark(el)

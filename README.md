@@ -14,23 +14,31 @@ Content Security Policy. Settings stay in `storage.local` on this computer.
 
 1. In Chrome open `chrome://extensions`. In Edge open `edge://extensions`.
 2. Turn on **Developer mode**, then click **Load unpacked**.
-3. Select `E:\w\browser-persian-typography` (the folder containing `manifest.json`).
+3. Select `E:\w\browser-persian-typography\dist` (the built folder containing `manifest.json`).
 4. Reload an existing web tab once. Open a page with Persian text; it should
    use Vazirmatn and read from right to left block by block.
 5. Pin **Persian Typography** from the extensions menu. Click its toolbar icon
-   to switch the current site off (grey) or on (green). Existing tabs and
+   to open the popup. Its switch turns the current site off (grey icon) or on
+   (coloured icon). Existing tabs and
    embedded frames follow immediately, without another reload. With it off,
    the engine restores the page's attributes and styles.
 
-The repository root loads directly: no build or dependency installation is
-needed to use it. `tests/size.cjs` lists the files belonging in a distribution
-folder; development files, `.agent-work`, `design` and `node_modules` are not
-part of the extension package.
-The size check also leaves a clean, ready-to-load distribution in
-`.agent-work/engine/unpacked`, containing just those shipped files.
+From the repository, run `npm run build` once to create `dist/`. Node.js is
+needed to build; no dependency installation is needed. Load that folder in
+Chrome. Editing source files does not alter the loaded copy. After an update,
+run the command again and click **Reload** on the extension's card.
+`scripts/build.cjs` lists the shipped files; development files, `.agent-work`,
+`design` and `node_modules` are excluded. `npm run budget:size` measures `dist/`.
 
-There is no popup yet. Browser internal pages and browser extension stores do
-not allow content scripts. Shadow DOM and Firefox are outside this version.
+The popup has three views: the current site's switch, a searchable font list,
+and switched-off sites with a button to enable each one again. The font list
+comes from the browser's installed fonts and shows only Persian-capable fonts.
+Hover or focus a font to preview it on the tab. Move away or close the popup
+to restore the saved font; click or press Enter to save. Arrow keys move
+through font rows. Font names stay readable in the popup's own font.
+
+Browser internal pages and browser extension stores do not allow content
+scripts, so the popup hides the site switch there. Shadow DOM and Firefox are outside this version.
 Font widths can change line wrapping. The replacement font matches the page's
 vertical measures, allowing room for whole letters if they cannot fit. Layout
 containers are not mirrored. A page's explicit monospace fonts remain unchanged, including a
@@ -69,10 +77,12 @@ $env:WAITFOR_SLOTS = '2'
 New-Item -ItemType Directory -Force $env:TEMP | Out-Null
 npm ci
 npx playwright install chromium
+npm run build
 npm test
 npm run budget:size
 npm run budget:latin
 npm run budget:idle
+npm run test:popup
 npm run check:live
 ```
 
@@ -84,6 +94,16 @@ the unpacked extension in real Chromium and serve their own HTTP fixtures.
 They ask Chromium which fonts actually drew the letters, including under
 strict page CSP. They check restoration, streaming, native RTL, app layout,
 editors, multiple tabs, cross-host frames and a missing system font.
+All extension checks load `dist/`. The popup check opens the real extension
+page, with `?tabId=<id>` to identify the fixture tab while the popup page is
+itself an active tab in headless Chromium. Normal toolbar opening uses the
+active tab without this parameter. It checks the real fontSettings list,
+previews and restoration, local saves, keyboard controls, site removal,
+restricted pages, contrast and all five runs of each popup budget.
+It saves the final real-popup and post screenshots in
+`.agent-work/engine/shots/final/`. Headless Chromium cannot check the visible
+toolbar's popup placement or closing when clicking outside it; the test closes
+the extension page to exercise the same preview-port disconnect.
 
 The size gate fails over 300,000 uncompressed shipped bytes. The Latin gate
 checks all five 20,000-node runs: no DOM mutations, engine work at most 50 ms,

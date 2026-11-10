@@ -143,11 +143,31 @@ result over a budget is a failure, not a cost to weigh.
   uses the shared `cpu_budget.py` process-tree accounting and 0.25-second polls
   through `tests/idle-sample.py`; run it with `npm run budget:idle`.
 
-## Not decided yet
+## Interface
 
-The toolbar behaviour, the popup, the font picker and the list of sites are
-being designed with Omid from the mocks in `design/mocks/`. Until one is
-chosen the build carries only a plain click-to-switch on the toolbar icon, so
-the engine can be tried.
+The toolbar opens the chosen **B · پنجرهٔ آروم** popup. Its icon is coloured
+when the current site is on and grey when it is off.
+
+- **Main view.** The current host, its on/off switch and its state in words
+  come first. The font row opens the font view. The switched-off-sites row
+  appears only when there are sites to show. On browser internal pages and
+  extension stores the site block is hidden.
+- **Font view.** Search the bundled Vazirmatn and installed fonts from
+  `chrome.fontSettings`; only fonts able to draw Persian are listed. Names
+  use the popup font; only «نمونه» uses the row's font. Pointer hover or
+  keyboard focus previews the font on the current tab under F1–F6, without
+  saving it. Leaving the row or closing the popup restores the saved font.
+  Clicking or pressing Enter saves the choice. Arrow keys move between rows.
+- **Sites view.** Each switched-off host has «روشن کن». It enables that site
+  and removes the row. Removing the last row returns to the main view.
+
+Settings stay local. The Persian-capable font list is cached locally and
+rechecked when the installed family list changes. The complete main view
+must appear within 100 ms of opening; the complete font view within 1.5 s
+the first time and 200 ms later. Each budget must pass all five measurements.
+
+`npm run build` copies only shipped files to the ignored `dist/` folder.
+Source edits do not change that loadable copy; only another build does.
+The size budget measures every file in `dist/`.
 
 Not in the first version: text inside shadow DOM, Firefox, mobile browsers.

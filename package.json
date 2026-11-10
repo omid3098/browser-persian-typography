@@ -3,11 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "build": "node scripts/build.cjs",
     "test": "node tests/unit.cjs && node tests/e2e.cjs && node tests/font-metrics.cjs",
     "budget:size": "node tests/size.cjs",
     "budget:latin": "node tests/latin-budget.cjs",
     "budget:idle": "node tests/idle-budget.cjs",
-    "check:live": "node tests/live.cjs"
+    "check:live": "node tests/live.cjs",
+    "test:popup": "node tests/popup.cjs"
   },
   "devDependencies": { "playwright": "1.56.1" }
 }
