@@ -51,6 +51,18 @@ const { start, fonts, chat } = require("./harness.cjs")
     assert.equal(await page.locator("#tie").getAttribute("dir"), null)
     console.log("PASS D6: GitHub columns, strict majority, nested own items, layout exclusions, live threshold changes")
 
+    await open("blockSpans")
+    assert.equal(await page.locator("#rows").getAttribute("dir"), null, "S1: block spans must not turn their container")
+    assert.equal(await css("#en", "direction"), "ltr")
+    await rtl("#fa")
+    console.log("PASS S1: computed block spans keep English LTR and their container untouched")
+
+    await open("latinGroups"); await rtl("#list")
+    for (const selector of ["#enheading", "#enpara", "#endiv", "#enspan", "#tableheading"]) {
+      assert.equal(await page.locator(selector).getAttribute("dir"), "ltr", `S3: ${selector}`)
+    }
+    console.log("PASS S3: every Latin text block inside a turned group is LTR")
+
     for (const fixture of ["native", "shell"]) {
       await off(); await open(fixture)
       const snapshot = () => page.locator(fixture === "native" ? "nav, #english" : "#icon,#neighbor,#sideIcon,#center").evaluateAll(els => els.map(el => {

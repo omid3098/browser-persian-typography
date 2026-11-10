@@ -1,4 +1,19 @@
 import { siteKey, handleSettings } from "./settings.js"
+import { findPersianFonts } from "./popup/font-list.js"
+
+let fontWarmup
+async function warmFonts() {
+  if (fontWarmup) return fontWarmup
+  fontWarmup = (async () => {
+    const started = performance.now()
+    await chrome.storage.local.remove("persianFonts")
+    await findPersianFonts()
+    globalThis.__persianFontWarmupMs = performance.now() - started
+  })()
+  try { await fontWarmup } finally { fontWarmup = null }
+}
+chrome.runtime.onInstalled.addListener(() => { warmFonts().catch(() => {}) })
+chrome.runtime.onStartup.addListener(() => { warmFonts().catch(() => {}) })
 
 async function state(tab) {
   const site = siteKey(tab.url)

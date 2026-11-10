@@ -6,7 +6,6 @@
   const SKIP = 'pre,code,kbd,samp,svg,math,.katex,mjx-container,.MathJax,.xterm,.cm-editor,.monaco-editor,bdo,script,style,noscript,template'
   const CODE = 'pre,code,kbd,samp,svg,math,.katex,mjx-container,.MathJax,.xterm,.cm-editor,.monaco-editor'
   const PROSE = /^(P|H[1-6]|LI|BLOCKQUOTE|DT|DD|TD|TH|SUMMARY)$/
-  const INLINE = /^(A|ABBR|B|BDI|BR|CITE|DFN|EM|I|MARK|Q|S|SMALL|SPAN|STRONG|SUB|SUP|TIME|U|WBR)$/
   const INPUT = 'textarea,input:not([type]),input[type="text"],input[type="search"],input[type="email"],input[type="url"],input[type="tel"]'
   const EDIT = '[contenteditable]:not([contenteditable="false"])'
   const RANGES = 'U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC'
@@ -75,7 +74,7 @@
     while (current && !/^(HTML|BODY)$/.test(current.tagName)) {
       const display = getComputedStyle(current).display
       if (/(?:flex|grid)/.test(display)) return current === el ? null : el
-      if (!INLINE.test(current.tagName) && display !== "inline" && display !== "contents") return current
+      if (display !== "inline" && display !== "contents") return current
       el = current
       current = current.parentElement
     }
@@ -96,7 +95,7 @@
     if (!el || /^(HTML|BODY)$/.test(el.tagName)) return false
     if (/(?:flex|grid)/.test(getComputedStyle(el).display)) return false
     // A container of other blocks is never made into a direction boundary.
-    return !Array.from(el.children).some(child => !child.matches(SKIP) && !INLINE.test(child.tagName) && !["inline", "contents"].includes(getComputedStyle(child).display))
+    return !Array.from(el.children).some(child => !child.matches(SKIP) && !["inline", "contents"].includes(getComputedStyle(child).display))
   }
   function direction(el, dir) {
     if (el.getAttribute("dir") !== "rtl") attr(el, "dir", dir)
@@ -203,8 +202,9 @@
       } else if (dominantDirection(readable(group)) !== "rtl") continue
       direction(group, "rtl")
       turned.add(group)
-      const items = group.querySelectorAll("li,td,th,p,blockquote")
-      for (const item of items) if (!skipped(item) && !editable(item) && textBlock(item)) blocks.add(item)
+      for (const item of group.querySelectorAll("*")) {
+        if (!skipped(item) && !editable(item) && blockFor(item) === item && textBlock(item)) blocks.add(item)
+      }
     }
     for (const el of blocks) {
       const dir = dominantDirection(readable(el))

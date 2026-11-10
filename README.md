@@ -33,6 +33,9 @@ run the command again and click **Reload** on the extension's card.
 The popup has three views: the current site's switch, a searchable font list,
 and switched-off sites with a button to enable each one again. The font list
 comes from the browser's installed fonts and shows only Persian-capable fonts.
+The background prepares this list on install, update and browser startup so
+the first opening can read it immediately. Its offscreen page closes after the
+check. The popup can still check fonts itself if that answer is not ready yet.
 Hover or focus a font to preview it on the tab. Move away or close the popup
 to restore the saved font; click or press Enter to save. Arrow keys move
 through font rows. Font names stay readable in the popup's own font.

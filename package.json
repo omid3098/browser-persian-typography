@@ -9,7 +9,7 @@
     "budget:latin": "node tests/latin-budget.cjs",
     "budget:idle": "node tests/idle-budget.cjs",
     "check:live": "node tests/live.cjs",
-    "test:popup": "node tests/popup.cjs"
+    "test:popup": "node tests/font-warmup.cjs && node tests/popup.cjs"
   },
   "devDependencies": { "playwright": "1.56.1" }
 }

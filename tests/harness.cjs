@@ -11,6 +11,8 @@ const { chromium } = require("playwright")
 const tweet = `Claude Duet امروز برام باز شد.\nالان یه بات Grok هست که بخشی از کارهای سیب‌کده رو می‌کنه. می‌خوام همون رو با Duet تست کنم و اگه دربیاد جابه‌جا شم؛ بقیه‌ی کارهام همین الان روی Claude هست و ترجیح می‌دم همه‌چی یه جا باشه.\nنتیجه رو می‌نویسم.`
 const chat = `<h2>پاسخ Claude</h2><p id="mixed">Hello امروز خوبه <code id="code">const فارسی = 1</code></p><ul id="list"><li>گزینه اول</li><li>گزینه دوم</li><li id="englishItem">English only</li></ul><ol><li>اول</li><li>second</li></ol><table id="data"><tr><th>نام</th><th>Name</th></tr><tr><td>داده</td><td>مقدار</td></tr><tr><td>۱۲۳</td><td id="englishCell">Data</td></tr></table><pre id="pre">const فارسی = 1</pre><p>یه خط English وسط متن</p>`
 const pages = {
+  blockSpans: '<div id="rows"><span id="en" style="display:block">English only</span><span id="fa" style="display:block">متن فارسی</span></div>',
+  latinGroups: '<ul id="list"><li>فارسی</li><li>فارسی</li><li><h2 id="enheading">English heading</h2><p id="enpara">English para</p><div id="endiv">English div</div><span id="enspan" style="display:block">English span</span></li></ul><table><tr><th>فارسی</th><th>فارسی</th><td><h3 id="tableheading">English heading</h3></td></tr></table>',
   groups: '<table id="files"><tr><th>Name</th><th>Last commit message</th><th>Last commit date</th></tr><tr><td><div><a>README.md</a></div></td><td>Update docs</td><td>Yesterday</td></tr><tr><td><div><a>راهنما.txt</a></div></td><td>Add file</td><td>Today</td></tr></table><ul id="tie"><li>فارسی</li><li>English</li><li>123</li></ul><ul id="nested"><li>English<ul><li>فارسی</li><li>فارسی</li></ul></li><li>English</li></ul><ul id="layout" style="display:flex;list-style:none"><li>فارسی</li></ul><table id="noHeaders"><tr><td>فارسی</td></tr></table>',
   tweet: `<div style="display:flex;flex-direction:column"><div id="tweet" dir="auto" lang="en" data-testid="tweetText"><span id="letters">${tweet}</span></div></div>`,
   linkedin: '<p id="post"><span id="wrapper" dir="ltr">Hello امروز خوبه</span></p>',
@@ -82,4 +84,19 @@ async function fonts(context, page, selector) {
   await client.detach()
   return result
 }
-module.exports = { start, fonts, root, work, pages, chat }
+async function waitForFontCache(h) {
+  await h.worker.evaluate(() => new Promise((resolve, reject) => {
+    const timer = setTimeout(() => { chrome.storage.onChanged.removeListener(check); reject(new Error('Background font cache did not finish')) }, 15000)
+    async function check() {
+      const { persianFonts } = await chrome.storage.local.get('persianFonts')
+      if (!persianFonts?.families.includes('Tahoma')) return
+      if ((await chrome.runtime.getContexts({ contextTypes: ['OFFSCREEN_DOCUMENT'] })).length) return
+      clearTimeout(timer)
+      chrome.storage.onChanged.removeListener(check)
+      resolve()
+    }
+    chrome.storage.onChanged.addListener(check)
+    check()
+  }))
+}
+module.exports = { start, fonts, waitForFontCache, root, work, pages, chat }

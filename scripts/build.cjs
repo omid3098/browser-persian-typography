@@ -2,7 +2,7 @@ const fs = require("node:fs")
 const path = require("node:path")
 const root = path.resolve(__dirname, "..")
 const dist = path.join(root, "dist")
-const files = ["manifest.json", "background.js", "settings.js", "direction.js", "content.js", "fonts/Vazirmatn.woff2", "fonts/OFL.txt", "icons/on.png", "icons/off.png", "LICENSE", "popup/popup.html", "popup/popup.css", "popup/popup.js", "popup/persian-check.js"]
+const files = ["manifest.json", "background.js", "settings.js", "direction.js", "content.js", "fonts/Vazirmatn.woff2", "fonts/OFL.txt", "icons/on.png", "icons/off.png", "LICENSE", "popup/popup.html", "popup/popup.css", "popup/popup.js", "popup/persian-check.js", "popup/font-list.js", "popup/font-check.html", "popup/font-check.js"]
 function build() {
   for (const file of files) {
     const target = path.join(dist, file)

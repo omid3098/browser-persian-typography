@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const path = require('node:path')
-const { start, fonts, work } = require('./harness.cjs')
+const { start, fonts, waitForFontCache, work } = require('./harness.cjs')
 const shots = path.join(work, 'shots/final')
 const bundled = { type: 'bundled' }
 const system = { type: 'system', family: 'Tahoma' }
@@ -110,6 +110,16 @@ const probe = 'ابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی�
     await row('Tahoma').hover(); await expectFont('Tahoma')
     assert.equal(await h.page.locator('#tweet').evaluate(el => el.getBoundingClientRect().height), lineHeight, 'F6 also holds during preview')
     assert.deepEqual(await stored(), before, 'Preview saves no preference')
+    await popup.getByRole('textbox').fill('Tahoma')
+    await row('Tahoma').hover(); await expectFont('Tahoma')
+    await popup.mouse.move(160, 380); await expectFont('Vazirmatn')
+    assert.equal(await popup.locator('.pointed').count(), 0, 'S4: blank list space clears pointer preview')
+    await popup.keyboard.press('ArrowDown'); await expectFont('Tahoma')
+    await row('Tahoma').hover(); await popup.mouse.move(160, 380); await expectFont('Tahoma')
+    assert.equal(await row('Tahoma').evaluate(el => el === document.activeElement), true, 'S4: keyboard preview stays')
+    await popup.keyboard.press('ArrowUp'); await expectFont('Vazirmatn')
+    await popup.getByRole('textbox').fill('')
+    console.log('PASS S4: leaving a font row for blank list space clears hover but keeps keyboard preview')
     await popup.locator('.hd').hover(); await expectFont('Vazirmatn')
     await row('Tahoma').hover(); await expectFont('Tahoma')
     await popup.close(); await expectFont('Vazirmatn')
@@ -151,16 +161,20 @@ const probe = 'ابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی�
 
     // Budgets include real API calls, fonts, complete list and the next paint, without mocks.
     const timing = { main: [], firstFonts: [], laterFonts: [], reopenedFonts: [] }
+    const backgroundMs = []
     for (let run = 0; run < 5; run++) {
-      const cold = await start(`popup-budget-${run}`)
+      const cold = await start(`popup-prewarmed-budget-${run}`)
       try {
-        await cold.setting('readFont')
-        await cold.worker.evaluate(() => chrome.storage.local.clear())
+        await waitForFontCache(cold)
+        backgroundMs.push(await cold.worker.evaluate(() => __persianFontWarmupMs))
+        // A warm popup must read the result without launching any font-check workers.
+        await cold.context.addInitScript(() => { window.Worker = class { constructor() { throw new Error('Font check ran in a warmed popup') } } })
         await cold.open('tweet')
         const tabId = await cold.worker.evaluate(async url => (await chrome.tabs.query({})).find(tab => tab.url === url).id, cold.page.url())
         popup = await openPopup(tabId, 'light', cold)
         timing.main.push(await popup.evaluate(() => mainMs))
         timing.firstFonts.push(await fontView(popup))
+        assert(await popup.locator('.frow').count() > 1, 'Warmed cache must supply real fonts')
         await popup.getByRole('button', { name: 'برگشت' }).click()
         timing.laterFonts.push(await fontView(popup))
         await popup.close()
@@ -169,8 +183,9 @@ const probe = 'ابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی�
         await popup.close()
       } finally { await cold.close() }
     }
-    fs.writeFileSync(path.join(work, 'popup-timing.json'), JSON.stringify(timing, null, 2))
+    fs.writeFileSync(path.join(work, 'repairs-popup-timing.json'), JSON.stringify({ ...timing, backgroundMs }, null, 2))
     console.log('Popup ms (five each):', JSON.stringify(timing))
+    console.log('Background font check ms (five each):', JSON.stringify(backgroundMs))
     for (const [name, values] of Object.entries(timing)) assert(values.every(value => value <= (name === 'main' ? 100 : name === 'firstFonts' ? 1500 : 200)), `${name} exceeds budget`)
 
     await h.setting('setFont', { font: bundled })

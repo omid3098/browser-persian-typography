@@ -49,7 +49,8 @@ with its words out of order, in the system's fallback font.
   letter makes the text `rtl`, Latin letters alone make it `ltr`, anything else
   gives no direction.
 - **D2. Block by block.** The unit is a text block: the nearest ancestor of a
-  text node that lays its text out as lines (a paragraph, heading, list item,
+  text node that lays its text out as lines, decided by computed display rather
+  than the tag name (a paragraph, heading, list item,
   table cell, quote, or a `div` that holds text directly). Each block is
   decided by its own readable text, so each line follows its own text.
 - **D3. A block with Persian is RTL.** It gets `dir="rtl"` and is isolated
@@ -62,7 +63,7 @@ with its words out of order, in the system's fallback font.
   a menu or a sidebar keep the place the page gave them. This is the T3 rule
   for labels.
 - **D5. Latin-only blocks are left alone,** with one exception: inside a list,
-  table or quote that this extension turned RTL, a Latin-only item gets
+  table or quote that this extension turned RTL, every Latin-only text block gets
   `dir="ltr"`. Differs from T3, which also sets `ltr` on every Latin-only
   block of a chat: on an unknown page that would move English labels of a
   Persian site to the other side.
@@ -161,8 +162,10 @@ when the current site is on and grey when it is off.
 - **Sites view.** Each switched-off host has «روشن کن». It enables that site
   and removes the row. Removing the last row returns to the main view.
 
-Settings stay local. The Persian-capable font list is cached locally and
-rechecked when the installed family list changes. The complete main view
+Settings stay local. The background checks Persian-capable fonts on install,
+update and browser startup, caches the answer locally, then closes its offscreen
+worker host. The popup reads that cache, rechecking if the installed family list
+changed or the answer is not ready yet. The complete main view
 must appear within 100 ms of opening; the complete font view within 1.5 s
 the first time and 200 ms later. Each budget must pass all five measurements.
 
