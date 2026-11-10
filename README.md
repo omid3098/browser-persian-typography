@@ -18,8 +18,10 @@ Content Security Policy. Settings stay in `storage.local` on this computer.
 4. Reload an existing web tab once. Open a page with Persian text; it should
    use Vazirmatn and read from right to left block by block.
 5. Pin **Persian Typography** from the extensions menu. Click its toolbar icon
-   to open the popup. Its switch turns both font and direction off (grey icon)
-   or on (coloured icon). The icon stays coloured when either part is on.
+   to open the popup. Its switch turns the whole site off (grey icon) or on
+   with both parts. While the site is on, one row under the switch chooses
+   what the extension does there: **فونت و جهت** (the default), **فقط جهت**
+   or **فقط فونت**. The icon stays coloured when either part is on.
    Existing tabs and
    embedded frames follow immediately, without another reload. With it off,
    the engine restores the page's attributes and styles.
@@ -31,8 +33,14 @@ run the command again and click **Reload** on the extension's card.
 `scripts/build.cjs` lists the shipped files; development files, `.agent-work`,
 `design` and `node_modules` are excluded. `npm run budget:size` measures `dist/`.
 
-The popup has three views: the current site's switch, a searchable font list,
-and switched-off sites with a button to enable each one again. The font list
+The popup has three views: the current site's switch with its three-part row,
+a searchable font list, and the sites that are off or have one part off, each
+with a button that turns both parts on again. A site with one part off shows a
+grey line under its name, «فونت خاموش» or «جهت متن خاموش», and the count on the
+main view includes it. The three parts work as one group of choices: Tab
+reaches the chosen part, the arrow keys move to the next part and choose it.
+The font row stays in every state; with «فقط جهت» the chosen font is kept but
+not drawn on that site. The font list
 comes from the browser's installed fonts and shows only Persian-capable fonts.
 The background prepares this list on install, update and browser startup so
 the first opening can read it immediately. Its offscreen page closes after the
@@ -53,11 +61,12 @@ textarea that uses its browser's default monospace font.
 An extension page can import `settings.js`. It exports:
 
 ```js
-import { readSite, readSiteParts, setSitePart, setSite, switchSite, readFont, setFont, subscribe } from './settings.js'
+import { readSite, readSiteParts, setSitePart, setSiteParts, setSite, switchSite, readFont, setFont, subscribe } from './settings.js'
 await readSite('https://www.example.com') // true by default
 await readSiteParts('example.com') // { font: true, direction: true }
 await setSitePart('example.com', 'font', false) // direction only
 await setSitePart('example.com', 'direction', false) // both off
+await setSiteParts('example.com', false, true) // font off, direction on, in one write
 await setSite('example.com', true) // both on
 await switchSite('example.com') // both off if either was on; otherwise both on
 await setFont({ type: 'bundled' })
@@ -72,8 +81,8 @@ font falls back to the bundled Vazirmatn. Changes are delivered to open tabs
 through the browser's storage change event.
 
 `readSiteParts` returns the two booleans. `setSitePart(site, 'font' | 'direction',
-enabled)` changes just that part and returns both. These functions are ready for
-independent controls; the current popup keeps its one switch and its look.
+enabled)` changes just that part and returns both; `setSiteParts(site, font,
+direction)` sets both in one write, which the popup's three-part row uses.
 `readSite` reports whether either part is on. The old `disabledSites` list still
 stores hosts with both off. Only mixed states are stored in `siteParts`, keyed
 by hostname; every other host has both on. Existing settings need no migration.

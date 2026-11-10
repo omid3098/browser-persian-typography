@@ -213,20 +213,28 @@ when at least one part is on and grey when both are off.
   come first, in a band flush to the top edge. A host name too long for 20 px
   takes the full width and breaks after dots and hyphens; the state and switch
   sit on a row below it. The font row opens the font view. The
-  switched-off-sites row appears only when there are other sites to show (the
-  switch already shows this one), so switching a site off does not resize the
-  window. On browser internal pages and extension stores the site block is
+  sites row appears only when there are other sites to show (the switch and the
+  three-part row already show this one). Switching a site off hides the
+  three-part row, so the window gets shorter. On browser internal pages and extension stores the site block is
   hidden.
-  The existing single switch shows on when either part is on. It turns both
-  parts off or both on; independent controls are not yet in this popup.
+  The switch shows on when either part is on. It turns the whole site off, or
+  on with both parts. While the site is on, one row of three parts sits under
+  the band: «فونت و جهت» (default), «فقط جهت» and «فقط فونت». One click changes
+  the open tab at once. The row is one group of three choices for the keyboard
+  and screen readers: Tab reaches the chosen part and the arrow keys move to
+  the next part and choose it. The font row stays in every state; with
+  «فقط جهت» the chosen font is kept and not drawn on that site.
 - **Font view.** Search the bundled Vazirmatn and installed fonts from
   `chrome.fontSettings`; only fonts able to draw Persian are listed. Names
   use the popup font; only «نمونه» uses the row's font. Pointer hover or
   keyboard focus previews the font on the current tab under F1–F6, without
   saving it. Leaving the row or closing the popup restores the saved font.
   Clicking or pressing Enter saves the choice. Arrow keys move between rows.
-- **Sites view.** Each switched-off host has «روشن کن». It enables that site
-  and removes the row. Removing the last row returns to the main view.
+- **Sites view.** Each other host that is off, or has one part off, has
+  «روشن کن». A host with one part off shows a grey line under its name, «فونت
+  خاموش» or «جهت متن خاموش». The button turns both parts on and removes the
+  row. Removing the last row returns to the main view. The row on the main view
+  counts all of these hosts.
 
 Settings stay local. The background checks Persian-capable fonts on install,
 update and browser startup, caches the answer locally, then closes its offscreen

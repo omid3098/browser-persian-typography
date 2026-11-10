@@ -52,6 +52,12 @@ svg{display:block;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;stro
 .b-site.long .state{order:2;flex:1}
 .b-site.long .sw{order:3}
 .b-site .state{font-size:14px;color:var(--ink3);line-height:20px}
+/* the three parts of the site: one selector under the switch */
+.parts{padding:12px 16px 4px}
+.seg{display:flex;gap:4px;padding:4px;background:var(--bg2);border-radius:12px}
+.opt{flex:1;min-width:0;height:32px;border-radius:8px;text-align:center;font-size:14px;font-weight:500;color:var(--ink3);white-space:nowrap}
+.opt:hover{color:var(--ink)}
+.opt[aria-checked="true"]{background:var(--surf);color:var(--ink);font-weight:600;box-shadow:inset 0 0 0 1px var(--line2)}
 .b-rows{padding:8px 0}
 .brow{width:100%;min-height:56px;padding:8px 16px;display:flex;align-items:center;gap:8px}
 .brow:hover{background:var(--hover)}
@@ -88,5 +94,8 @@ svg{display:block;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;stro
 .sites{max-height:368px;overflow-y:auto;overflow-x:hidden}
 .srow{min-height:56px;padding:8px 16px;display:flex;align-items:center;gap:8px}
 .srow .host{flex:1;min-width:0;font-size:16px;overflow-wrap:anywhere}
+.srow .who{flex:1;min-width:0}
+.srow .who .host{display:block}
+.srow .sub{font-size:14px;line-height:20px;color:var(--ink3)}
 .btn{height:32px;padding:0 12px;border-radius:16px;background:var(--bg2);font-size:14px;font-weight:500;white-space:nowrap}
 .btn:hover{background:var(--point)}

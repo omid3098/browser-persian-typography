@@ -1,10 +1,10 @@
 import { findPersianFonts } from "./font-list.js"
-import { siteKey, setSite, setFont, subscribe } from "../settings.js"
+import { siteKey, sitePartsFor, setSite, setSiteParts, setFont, subscribe } from "../settings.js"
 
 const app = document.getElementById("app")
 const BUNDLED = { type: "bundled" }
 const BUNDLED_NAME = "وزیرمتن"
-const state = { tabId: null, host: null, off: [], font: BUNDLED }
+const state = { tabId: null, host: null, off: [], mixed: {}, font: BUNDLED }
 let view = "main"
 let leavePreview = () => {}
 
@@ -42,14 +42,28 @@ function siteOf(url) {
 }
 
 async function readStored() {
-  const { disabledSites = [], font = BUNDLED } = await chrome.storage.local.get(["disabledSites", "font"])
+  const { disabledSites = [], siteParts = {}, font = BUNDLED } = await chrome.storage.local.get(["disabledSites", "siteParts", "font"])
   state.off = [...disabledSites].sort()
+  state.mixed = siteParts
   state.font = font
 }
 
-const siteOn = () => !state.off.includes(state.host)
-// The switch already shows this site; the list holds the other switched-off sites.
-const others = () => state.off.filter(host => host !== state.host)
+const partsOf = host => sitePartsFor(host, { disabledSites: state.off, siteParts: state.mixed })
+const siteOn = () => { const { font, direction } = partsOf(state.host); return font || direction }
+// Same rule as the settings module, so the popup can show a change before it is saved.
+function applyLocal(host, parts) {
+  const on = parts.font || parts.direction
+  state.off = on ? state.off.filter(site => site !== host) : [...new Set([...state.off, host])].sort()
+  const { [host]: _, ...mixed } = state.mixed
+  state.mixed = parts.font === parts.direction ? mixed : { ...mixed, [host]: parts }
+}
+// The switch already shows this site; the list holds the other sites with a part off, and says which.
+const others = () => [
+  ...state.off.map(host => ({ host, note: "" })),
+  ...Object.entries(state.mixed).map(([host, parts]) => ({ host, note: parts.font ? "جهت متن خاموش" : "فونت خاموش" }))
+].filter(site => site.host !== state.host).sort((a, b) => a.host.localeCompare(b.host))
+const MODES = [["both", "فونت و جهت", true, true], ["direction", "فقط جهت", false, true], ["font", "فقط فونت", true, false]]
+const modeOf = ({ font, direction }) => font && direction ? "both" : direction ? "direction" : "font"
 const fontName = font => font.type === "system" ? font.family : BUNDLED_NAME
 const sameFont = (a, b) => a.type === b.type && a.family === b.family
 
@@ -79,6 +93,22 @@ function showMain(focus) {
     main.host = h("div", { class: "host", dir: "ltr" }, state.host)
     root.append(h("div", { class: "b-site" }, h("div", { class: "who" }, main.host, main.state), main.sw))
     main.sw.addEventListener("click", toggleSite)
+    main.parts = h("div", { class: "parts" }, h("div", { class: "seg", role: "radiogroup", "aria-label": "در این سایت" },
+      ...MODES.map(([mode, label]) => h("button", { class: "opt", type: "button", role: "radio", "data-mode": mode }, label))))
+    main.parts.addEventListener("click", event => {
+      const option = event.target.closest(".opt")
+      if (option) chooseMode(option.dataset.mode)
+    })
+    main.parts.addEventListener("keydown", event => {
+      const step = { ArrowLeft: 1, ArrowDown: 1, ArrowRight: -1, ArrowUp: -1 }[event.key]
+      if (!step) return
+      event.preventDefault()
+      const options = [...main.parts.querySelectorAll(".opt")]
+      const next = options[(options.indexOf(document.activeElement) + step + options.length) % options.length]
+      next.focus()
+      chooseMode(next.dataset.mode)
+    })
+    root.append(main.parts)
   }
   main.font = h("button", { class: "brow", type: "button" }, h("span", { class: "k" }, "فونت"), h("span", { class: "v" }), h("span", { html: ICON.chev }))
   main.fontValue = main.font.querySelector(".v")
@@ -98,6 +128,12 @@ function paintMain() {
     const on = siteOn()
     main.sw.setAttribute("aria-checked", String(on))
     main.state.textContent = on ? "روشن" : "خاموش"
+    main.parts.hidden = !on
+    const mode = modeOf(partsOf(state.host))
+    for (const option of main.parts.querySelectorAll(".opt")) {
+      option.setAttribute("aria-checked", String(option.dataset.mode === mode))
+      option.tabIndex = option.dataset.mode === mode || !on ? 0 : -1
+    }
   }
   main.fontValue.textContent = fontName(state.font)
   main.sitesValue.textContent = fa(others().length)
@@ -120,9 +156,17 @@ function fitHost() {
 
 async function toggleSite() {
   const next = !siteOn()
-  state.off = next ? state.off.filter(host => host !== state.host) : [...state.off, state.host].sort()
+  applyLocal(state.host, { font: next, direction: next })
   paintMain()
   try { await setSite(state.host, next) } catch { await refresh() }
+}
+
+async function chooseMode(mode) {
+  const [, , font, direction] = MODES.find(entry => entry[0] === mode)
+  if (modeOf(partsOf(state.host)) === mode) return
+  applyLocal(state.host, { font, direction })
+  paintMain()
+  try { await setSiteParts(state.host, font, direction) } catch { await refresh() }
 }
 
 // ---------- font view ----------
@@ -315,12 +359,13 @@ function syncSites() {
   const sites = others()
   if (sites.length === 0) return showMain("font")
   const { list } = sitesView
-  const shown = [...list.children].map(li => li.dataset.host)
-  if (shown.join("\n") === sites.join("\n")) return
-  list.replaceChildren(...sites.map(host => {
-    const li = h("li", { class: "srow" }, h("span", { class: "host", dir: "ltr" }, host),
+  const shown = [...list.children].map(li => `${li.dataset.host} ${li.dataset.note}`)
+  if (shown.join("\n") === sites.map(site => `${site.host} ${site.note}`).join("\n")) return
+  list.replaceChildren(...sites.map(({ host, note }) => {
+    const li = h("li", { class: "srow" }, h("div", { class: "who" }, h("span", { class: "host", dir: "ltr" }, host), ...(note ? [h("div", { class: "sub" }, note)] : [])),
       h("button", { class: "btn", type: "button", "aria-label": `روشن کن: ${host}` }, "روشن کن"))
     li.dataset.host = host
+    li.dataset.note = note
     li.querySelector(".btn").dataset.host = host
     return li
   }))
@@ -328,7 +373,7 @@ function syncSites() {
 
 async function switchOn(li, host) {
   const next = li.nextElementSibling ?? li.previousElementSibling
-  state.off = state.off.filter(site => site !== host)
+  applyLocal(host, { font: true, direction: true })
   if (others().length === 0) showMain("font")
   else {
     li.remove()

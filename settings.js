@@ -9,6 +9,7 @@ const call = (operation, args = {}) => chrome.runtime.sendMessage({ type: "setti
 export const readSite = site => call("readSite", { site })
 export const readSiteParts = site => call("readSiteParts", { site })
 export const setSitePart = (site, part, enabled) => call("setSitePart", { site, part, enabled })
+export const setSiteParts = (site, font, direction) => call("setSiteParts", { site, font, direction })
 export const setSite = (site, enabled) => call("setSite", { site, enabled })
 export const switchSite = site => call("switchSite", { site })
 export const readFont = () => call("readFont")
@@ -46,9 +47,14 @@ export function handleSettings(message) {
       }
       case "setSite":
       case "setSitePart":
+      case "setSiteParts":
       case "switchSite": {
-        if (!key || (message.operation !== "switchSite" && typeof message.enabled !== "boolean")) throw new Error("A site and enabled state are required")
-        if (message.operation === "setSitePart") {
+        const both = message.operation === "setSiteParts"
+        if (!key || (message.operation === "setSiteParts" ? typeof message.font !== "boolean" || typeof message.direction !== "boolean" : message.operation !== "switchSite" && typeof message.enabled !== "boolean")) throw new Error("A site and enabled state are required")
+        if (both) {
+          parts.font = message.font
+          parts.direction = message.direction
+        } else if (message.operation === "setSitePart") {
           if (!["font", "direction"].includes(message.part)) throw new Error("Choose font or direction")
           parts[message.part] = message.enabled
         } else {
@@ -63,7 +69,7 @@ export function handleSettings(message) {
           disabledSites: enabled ? disabledSites.filter(site => site !== key) : [...new Set([...disabledSites, key])],
           siteParts: nextParts
         })
-        return message.operation === "setSitePart" ? parts : enabled
+        return message.operation === "setSitePart" || both ? parts : enabled
       }
       default: throw new Error("Unknown settings operation")
     }
