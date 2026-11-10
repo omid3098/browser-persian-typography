@@ -93,7 +93,7 @@ These pages show where the extension stops, or where it does something you may n
 </p>
 
 <p align="center">
-  <em>The same Persian card in an open shadow root (repaired) and in a closed one (out of reach).</em>
+  <em>Persian text in an open shadow root gets the font and direction rules. Text in a closed shadow root stays as it is.</em>
 </p>
 
 Limits without a picture:
