@@ -46,6 +46,8 @@ Persian text in the Vazirmatn font, with the right direction for each text block
 • عرض حرف‌های وزیرمتن با فونت سایت فرق دارد و ممکن است جای شکستن خط‌ها عوض شود.
 • نسخهٔ فعلی برای مرورگرهای مبتنی بر کرومیوم است، نه فایرفاکس و موبایل.
 
+ایموجی‌های عکس‌های این صفحه از Twemoji است، اثر Twitter, Inc و دیگر مشارکت‌کنندگان، با مجوز CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)؛ اندازه‌شان تغییر کرده است.
+
 ────────────────────────────
 
 Persian text that reads right on every site
@@ -79,6 +81,8 @@ Known limits
 • After technical text is excluded, one Persian letter is enough to make a text block right to left. A line containing only a web address and breadcrumb pieces separated by › keeps its direction. An English label that holds a Persian phrase turns right to left as a whole.
 • Vazirmatn letters have other widths than the site's font, so a line may break in another place.
 • This version is for Chromium-based browsers. Firefox and mobile browsers are not supported.
+
+Emoji in the screenshots: Twemoji graphics, © Twitter, Inc and other contributors, licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/), resized.
 
 ## Category
 
