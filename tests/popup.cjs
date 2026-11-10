@@ -79,10 +79,10 @@ const probe = 'ابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی�
     try { await without.open('tweet'); assert.equal(await h.page.content(), await without.page.content()) }
     finally { await without.close() }
     assert.equal(await popup.locator('.state').innerText(), 'خاموش')
-    assert.equal(await h.worker.evaluate(id => iconCalls.filter(call => call.tabId === id).at(-1)?.path, targetId), 'icons/off.png')
+    assert.equal(await h.worker.evaluate(id => JSON.stringify(iconCalls.filter(call => call.tabId === id).at(-1)?.path), targetId), '{"16":"icons/toolbar-off-16.png","32":"icons/toolbar-off-32.png"}')
     await popup.getByRole('switch').click(); await expectFont('Vazirmatn')
     assert.equal(await popup.locator('.state').innerText(), 'روشن')
-    assert.equal(await h.worker.evaluate(id => iconCalls.filter(call => call.tabId === id).at(-1)?.path, targetId), 'icons/on.png')
+    assert.equal(await h.worker.evaluate(id => JSON.stringify(iconCalls.filter(call => call.tabId === id).at(-1)?.path), targetId), '{"16":"icons/toolbar-on-16.png","32":"icons/toolbar-on-32.png"}')
     console.log('PASS switch: exact extension-free page restoration, words, grey/colour icon requests, on again')
 
     await fontView(popup)

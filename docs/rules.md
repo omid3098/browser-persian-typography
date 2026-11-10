@@ -209,6 +209,11 @@ result over a budget is a failure, not a cost to weigh.
 
 The toolbar opens the chosen **B · پنجرهٔ آروم** popup. Its icon is coloured
 when at least one part is on and grey when both are off.
+The mark is an upright alef beside three dots in one straight column, as tall as the alef.
+The toolbar icon is the bare mark at 16 and 32 px, teal when on and grey when off. The extension's
+own icon is the white mark on a teal tile at 48 and 128 px (the 128 px image has 16 px of
+transparent padding). The PNGs in `icons/` are rendered from the SVG sources beside them, which
+are not packaged.
 
 - **Window edge.** Chrome draws the toolbar popup's window itself: square
   corners and a 1 px frame that a page cannot round. So the popup's bands and

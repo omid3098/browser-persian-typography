@@ -6,10 +6,11 @@
   "permissions": ["storage", "fontSettings", "offscreen"],
   "host_permissions": ["<all_urls>"],
   "background": { "service_worker": "background.js", "type": "module" },
+  "icons": { "16": "icons/toolbar-on-16.png", "32": "icons/toolbar-on-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png" },
   "action": {
     "default_title": "Persian Typography",
     "default_popup": "popup/popup.html",
-    "default_icon": { "16": "icons/on.png", "32": "icons/on.png" }
+    "default_icon": { "16": "icons/toolbar-on-16.png", "32": "icons/toolbar-on-32.png" }
   },
   "content_scripts": [{
     "matches": ["<all_urls>"],

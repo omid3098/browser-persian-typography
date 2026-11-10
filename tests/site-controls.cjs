@@ -94,7 +94,7 @@ pages.siteControlsChild = markup
     const icon = expected => worker.evaluate(({ tabId, expected }) => new Promise((resolve, reject) => {
       let n = 0
       const check = () => {
-        if (iconCalls.filter(call => call.tabId === tabId).at(-1)?.path === expected) return resolve()
+        if (JSON.stringify(iconCalls.filter(call => call.tabId === tabId).at(-1)?.path) === expected) return resolve()
         if (++n > 100) return reject(new Error('Wrong toolbar icon'))
         setTimeout(check, 10)
       }
@@ -106,7 +106,7 @@ pages.siteControlsChild = markup
     assert.deepEqual(await presentation(page, 'direction'), originalFont, 'Direction-only keeps every font property')
     assert.deepEqual(await presentation(child, 'direction'), originalChildFont)
     assert(!(await fonts(h.context, page, '#post')).some(f => f.isCustomFont), 'Page fonts actually draw direction-only text')
-    await icon('icons/on.png')
+    await icon('{"16":"icons/toolbar-on-16.png","32":"icons/toolbar-on-32.png"}')
     console.log('PASS direction-only: blocks, fields, editable roots, nested shadow roots, second tab and cross-host frame; native fonts')
 
     await part('font', true); await part('direction', false)
@@ -114,7 +114,7 @@ pages.siteControlsChild = markup
     assert.deepEqual(await presentation(page, 'font'), originalDirection, 'Font-only restores all direction, bidi and alignment writes')
     assert.deepEqual(await presentation(child, 'font'), originalChildDirection)
     assert((await fonts(h.context, page, '#post')).some(f => /Vazirmatn/.test(f.familyName) && f.isCustomFont))
-    await icon('icons/on.png')
+    await icon('{"16":"icons/toolbar-on-16.png","32":"icons/toolbar-on-32.png"}')
     console.log('PASS font-only: direction and authored auto restored everywhere; actual bundled font draws Persian')
 
     // Exercise new text and character-data streaming under each independent setting.
@@ -164,7 +164,7 @@ pages.siteControlsChild = markup
     assert.deepEqual(await snapshot(page), original, 'Both off restores exact light and shadow markup')
     assert.deepEqual(await snapshot(currentChild), childOriginal, 'Both off restores the frame')
     assert.deepEqual(await snapshot(second), secondOriginal, 'Both off restores other open tabs')
-    await icon('icons/off.png')
+    await icon('{"16":"icons/toolbar-off-16.png","32":"icons/toolbar-off-32.png"}')
     await both(true); await check(page, { font: true, direction: true })
     assert.equal(await setting('switchSite', { site: base }), false)
     assert.deepEqual(await snapshot(page), original)

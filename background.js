@@ -21,10 +21,11 @@ async function state(tab) {
   const parts = sitePartsFor(site, stored)
   return { site, enabled: parts.font || parts.direction, parts, font: stored.font || { type: "bundled" } }
 }
+const toolbarIcon = enabled => ({ 16: `icons/toolbar-${enabled ? "on" : "off"}-16.png`, 32: `icons/toolbar-${enabled ? "on" : "off"}-32.png` })
 async function icon(tab) {
   if (!tab.id || !/^https?:/.test(tab.url || "")) return
   const { enabled } = await state(tab)
-  await chrome.action.setIcon({ tabId: tab.id, path: enabled ? "icons/on.png" : "icons/off.png" })
+  await chrome.action.setIcon({ tabId: tab.id, path: toolbarIcon(enabled) })
   await chrome.action.setTitle({ tabId: tab.id, title: `Persian Typography: ${enabled ? "on" : "off"}` })
 }
 chrome.runtime.onMessage.addListener((message, sender, respond) => {
