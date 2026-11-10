@@ -29,9 +29,17 @@ const pages = {
   big: Array.from({ length: 20000 }, (_, i) => `<span>English text ${i}</span>`).join("")
 }
 pages.shadow = '<div id="chatHost"></div><script src="/shadow-fixture.js"></script>'
-pages.shadowLatin = `<div id="latinHost"><template shadowrootmode="open"><div id="nestedLatin"><template shadowrootmode="open"><input id="emptyInput"><textarea id="emptyTextarea" style="font-family:Arial"></textarea><div id="emptyEditor" contenteditable="true"></div>${pages.big}</template></div></template></div>`
+pages.shadowLatin = '<div id="latinHost"></div><script src="/shadow-latin-fixture.js"></script>'
 async function start(name, { extension = true } = {}) {
   const server = http.createServer((req, res) => {
+    if (req.url === '/shadow-latin-fixture.js') { res.setHeader('Content-Type', 'text/javascript'); res.end(`
+      const outer = document.querySelector('#latinHost').attachShadow({ mode: 'open' });
+      outer.innerHTML = '<div id="nestedLatin"></div><div id="lateLatin"></div>';
+      outer.querySelector('#nestedLatin').attachShadow({ mode: 'open' }).innerHTML = ${JSON.stringify('<input id="emptyInput"><textarea id="emptyTextarea" style="font-family:Arial"></textarea><div id="emptyEditor" contenteditable="true"></div>' + pages.big)};
+      window.addEventListener('load', () => {
+        outer.querySelector('#lateLatin').attachShadow({ mode: 'open' }).innerHTML = '<p id="lateLatinText">English after load</p>';
+      });
+    `); return }
     if (req.url === '/shadow-fixture.js') { res.setHeader('Content-Type', 'text/javascript'); res.end(fs.readFileSync(path.join(__dirname, 'shadow-fixture.js'))); return }
     if (req.url === "/page.css") { res.setHeader("Content-Type", "text/css"); res.end('body{font-family:Arial,sans-serif;margin:20px}#tweet{white-space:pre-line}.emoji-posts{display:flex;flex-direction:column;background:#000}.emoji-posts [data-testid="tweetText"]{display:block;font-family:Vazirmatn,Tahoma,Arial,sans-serif}.emoji-posts span{display:inline;position:relative}.emoji-posts img{display:inline-block;width:1em;height:1em}'); return }
     if (req.url === "/emoji.svg") { res.setHeader("Content-Type", "image/svg+xml"); res.end('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill="red" d="M4 12V6a4 4 0 0 1 8 0v6z"/></svg>'); return }

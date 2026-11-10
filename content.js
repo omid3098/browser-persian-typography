@@ -13,6 +13,9 @@
   const originals = new Map()
   const dirty = new Set()
   const shadowRoots = new Set()
+  const announcedHosts = new Set()
+  const hostRefs = new WeakMap()
+  const forgottenHosts = new FinalizationRegistry(ref => announcedHosts.delete(ref))
   const scans = []
   let config, frame = 0, walker = null, fontPromise, pendingFonts = 0, pendingStates = 0
   let previewFont = null, previewPort = null, updateVersion = 0
@@ -100,22 +103,33 @@
     }
     return el && !/^(HTML|BODY)$/.test(el.tagName) ? el : null
   }
+  function contentNodes(el) {
+    if (el.nodeType === 1 && el.localName === "slot") {
+      const assigned = el.assignedNodes({ flatten: true })
+      if (assigned.length) return assigned
+    }
+    return (el.shadowRoot || el).childNodes
+  }
   function readable(el, ownItem = false) {
-    const walk = document.createTreeWalker(el.shadowRoot || el, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
-      acceptNode(node) {
-        if (node.nodeType === 1) return node.matches(SKIP) || (node !== el && node.matches(EDIT)) || (ownItem && node.matches("ul,ol,table")) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_SKIP
-        return NodeFilter.FILTER_ACCEPT
-      }
-    })
     let text = ""
-    for (let node; (node = walk.nextNode());) text += node.data + " "
+    function read(parent) {
+      for (const node of contentNodes(parent)) {
+        if (node.nodeType === 3) text += node.data + " "
+        else if (node.nodeType === 1 && !node.matches(SKIP) && !node.matches(EDIT) && !(ownItem && node.matches("ul,ol,table"))) read(node)
+      }
+    }
+    read(el)
     return text
   }
   function textBlock(el) {
     if (!el || /^(HTML|BODY)$/.test(el.tagName)) return false
     if (/(?:flex|grid)/.test(getComputedStyle(el).display)) return false
-    // A container of other blocks is never made into a direction boundary.
-    return !Array.from((el.shadowRoot || el).children).some(child => !child.matches(SKIP) && !INLINE_DISPLAY.test(getComputedStyle(child).display))
+    // Assigned blocks split a host just as its ordinary block children do.
+    function hasBlock(parent) {
+      return Array.from(contentNodes(parent)).some(child => child.nodeType === 1 && !child.matches(SKIP) &&
+        (child.localName === "slot" ? hasBlock(child) : !INLINE_DISPLAY.test(getComputedStyle(child).display)))
+    }
+    return !hasBlock(el)
   }
   function direction(el, dir) {
     if (el.getAttribute("dir") !== "rtl") attr(el, "dir", dir)
@@ -206,14 +220,9 @@
     }
     const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
     for (let node; (node = walk.nextNode());) if (ARABIC.test(node.data)) candidate(node.parentElement || node.getRootNode().host)
-    const elements = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT)
-    function shadow(el) {
-      if (!el.shadowRoot) return
-      shadowRoots.add(el.shadowRoot)
-      collect(el.shadowRoot, holders, blocks, groups, fields)
+    for (const shadow of shadowRoots) {
+      if (root === shadow.host || root.contains(shadow.host)) collect(shadow, holders, blocks, groups, fields)
     }
-    if (root.nodeType === 1) shadow(root)
-    for (let el; (el = elements.nextNode());) shadow(el)
   }
   function apply(roots) {
     const holders = new Set(), blocks = new Set(), groups = new Set(), fields = new Set()
@@ -246,7 +255,7 @@
       const dir = dominantDirection(readable(el))
       if (dir === "rtl" || (dir === "ltr" && Array.from(turned).some(group => group.contains(el)))) direction(el, dir)
       if (dir === "rtl") {
-        for (const code of el.querySelectorAll(CODE)) {
+        for (const code of (el.shadowRoot || el).querySelectorAll(CODE)) {
           prop(code, "direction", "ltr")
           prop(code, "unicode-bidi", "isolate")
           if (/^(PRE|CODE|KBD|SAMP)$/.test(code.tagName)) prop(code, "text-align", "left")
@@ -279,11 +288,24 @@
   }
   function scan(root) {
     for (const field of root.querySelectorAll(`${INPUT},${EDIT}`)) dirty.add(field)
-    return document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT)
+    return document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+  }
+  function activateRoots() {
+    for (const ref of announcedHosts) {
+      const host = ref.deref()
+      if (!host) { announcedHosts.delete(ref); continue }
+      const root = host.shadowRoot
+      if (!host.isConnected || !root || shadowRoots.has(root)) continue
+      shadowRoots.add(root)
+      const next = scan(root)
+      if (walker) scans.push(next)
+      else walker = next
+    }
   }
   function mark(node) {
-    let el = node.nodeType === 1 || node.nodeType === 11 || node === document ? node : node.parentElement
+    let el = node.nodeType === 1 || node.nodeType === 11 || node === document ? node : node.parentElement || node.getRootNode()
     if (!el) return
+    if (el instanceof ShadowRoot) el = el.host
     for (let parent = el; parent; parent = parent.parentElement) if (originals.has(parent)) el = parent
     // Include the nearest list so Latin siblings follow a streaming Persian item.
     el = el.closest?.("ul,ol,table,blockquote") || el
@@ -305,20 +327,15 @@
     const start = performance.now()
     frame = 0
     observer.disconnect()
+    activateRoots()
     if (walker) {
-      // Discover roots in the text walk instead of making a second full pass.
+      // Same text-only scan as a page without roots; announced roots have their own walkers.
       const roots = []
       let node, scanned = 0
       while (walker) {
         node = walker.nextNode()
         if (!node) { walker = scans.shift() || null; continue }
-        if (node.nodeType === 1) {
-          const root = node.shadowRoot
-          if (root) {
-            shadowRoots.add(root)
-            scans.push(scan(root))
-          }
-        } else if (ARABIC.test(node.data)) roots.push(node.parentElement || node.getRootNode().host)
+        if (ARABIC.test(node.data)) roots.push(node.parentElement || node.getRootNode().host)
         if (++scanned % 128 === 0 && performance.now() - start > 4) break
       }
       apply(roots)
@@ -363,6 +380,7 @@
       return
     }
     walker = scan(document)
+    activateRoots()
     observe()
     frame = requestAnimationFrame(flush)
     const time = performance.now() - start
@@ -392,12 +410,23 @@
     const field = editable(el) || (el.matches(INPUT) ? el : null)
     if (field && (ARABIC.test(field.value || field.textContent) || originals.has(field))) mark(field)
   }, true)
-  document.addEventListener('__persianTypographyShadow', event => {
-    if (!config?.enabled) return
-    const target = event.composedPath()[0]
-    // The page can send this event too; only inspect actual connected DOM.
-    if (target instanceof Element || target instanceof ShadowRoot) mark(target)
-  }, true)
+  function announced(event) {
+    const start = performance.now()
+    // relatedTarget carries a detached host; composedPath preserves nested open hosts.
+    const host = event.target === document ? event.relatedTarget : event.composedPath()[0]
+    if (host instanceof Element && host.shadowRoot && !hostRefs.has(host)) {
+      const ref = new WeakRef(host)
+      hostRefs.set(host, ref)
+      announcedHosts.add(ref)
+      forgottenHosts.register(host, ref)
+      // Detached nested hosts cannot bubble to document, but reach this root.
+      host.shadowRoot.addEventListener('__persianTypographyShadow', announced, true)
+      if (config?.enabled && !frame) frame = requestAnimationFrame(flush)
+    }
+    const time = performance.now() - start
+    metrics.total += time; metrics.longest = Math.max(metrics.longest, time)
+  }
+  document.addEventListener('__persianTypographyShadow', announced, true)
   metrics.total += performance.now() - bootStart
   update()
 })()

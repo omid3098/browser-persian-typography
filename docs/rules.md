@@ -119,11 +119,17 @@ with its words out of order, in the system's fallback font.
   Open shadow roots follow the same F1–F6 and D1–D10 rules, at any nesting
   depth, including roots with only adopted style sheets. Each root is watched
   by the same observer. A document-start hook in the page's JavaScript world
-  reports `attachShadow` calls without reading text; initial scans and inserted
-  subtrees also find existing and declarative roots. Input events use their
-  original target inside an open root, so typing activates its fields too.
-  The initial scan finds shadow hosts and text in one sliced traversal, without
-  a separate element-discovery pass over the page.
+  announces each open `attachShadow` host, including disconnected hosts and
+  hosts created while the site is off. Nested disconnected hosts announce to
+  their enclosing root; a detached outer host crosses worlds as an event's
+  `relatedTarget`. Announcements keep only weak references, so removed hosts
+  can be collected. The engine scans only text in the document and announced
+  connected roots, with no element walk to discover roots. Initial text scans
+  are sliced across frames. Assigned slot content counts when reading a block
+  and deciding whether it contains other blocks. Direct shadow-root text changes
+  are observed too. Input events use their original target inside an open root,
+  so typing activates its fields too. Hook notification failures never change
+  the native attachment's result.
 - **B2. Off means untouched.** With the site switched off, or after it is
   switched off on an open page, the page is exactly as it was written: every
   `dir`, style and attribute the extension added is taken back, at once and
@@ -209,7 +215,9 @@ two measured runs.
 Source edits do not change that loadable copy; only another build does.
 The size budget measures every file in `dist/`.
 
-Known limits: closed shadow roots cannot be reached. A page that replaces or
-bypasses the document-start `attachShadow` hook can hide a root attached to an
-existing host until a later observed mutation causes that subtree to be scanned.
-Firefox and mobile browsers are not in the first version.
+Known limits: closed shadow roots cannot be reached. Parser-made roots from
+`<template shadowrootmode>` are not discovered: finding them would require an
+additional element scan on every page, outside the Latin-page budget. A page
+that replaces or bypasses the document-start `attachShadow` hook can hide roots;
+there is no fallback element scan. Firefox and mobile browsers are not in the
+first version.

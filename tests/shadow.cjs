@@ -40,8 +40,6 @@ const { start, fonts } = require('./harness.cjs')
     })
     await settle()
     for (const id of ['late', 'detached', 'message']) assert.equal(await css(id, 'direction'), 'rtl', id)
-    await page.evaluate(() => chatRoot.querySelector('#declarativeHost').setHTMLUnsafe('<div><template shadowrootmode="open"><p id="declarative">Sample ریشه اعلانی</p></template></div>'))
-    await settle(); assert.equal(await css('declarative', 'direction'), 'rtl')
     await page.locator('#message').evaluate(el => { el.firstChild.data = 'English only' }); await settle()
     assert.equal(await css('message', 'direction'), 'ltr')
     for (const id of ['shadowTextarea', 'shadowInput', 'editor']) {
