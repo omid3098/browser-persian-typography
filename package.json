@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "node scripts/build.cjs",
-    "test": "node tests/unit.cjs && node tests/e2e.cjs && node tests/font-metrics.cjs",
+    "test": "node tests/unit.cjs && node tests/e2e.cjs && node tests/real-page-repairs.cjs && node tests/font-metrics.cjs",
     "budget:size": "node tests/size.cjs",
     "budget:latin": "node tests/latin-budget.cjs",
     "budget:idle": "node tests/idle-budget.cjs",

@@ -1,0 +1,97 @@
+const assert = require('node:assert/strict')
+const fs = require('node:fs')
+const path = require('node:path')
+const { start, fonts, pages, work } = require('./harness.cjs')
+
+// Real markup shapes, with invented text and local images only.
+pages.mixedResult = '<div id="result"><h2 id="title"><a>عنوان ساختگی</a></h2><div style="display:flex">example.test</div><a id="snippet">Sample این توضیح ساختگی برای آزمون جهت متن است و با یک نام لاتین شروع می‌شود.</a><div>Footer</div></div>'
+pages.citationChip = '<div id="answer" style="display:flow-root">Sample این پاسخ ساختگی است <a id="chip" style="display:inline-block"><img src="/emoji.svg" style="width:16px;height:16px"><span>example.test</span></a><span id="flexChip" style="display:inline-flex"><img src="/emoji.svg" style="width:16px;height:16px">Latin site</span><span id="gridChip" style="display:inline-grid;grid-template-columns:16px auto"><img src="/emoji.svg" style="width:16px;height:16px">Latin grid</span></div>'
+pages.hiddenLogo = '<header><div style="display:flex"><div><h1><a id="logo" style="display:block;font:0 a;width:220px;height:80px;background:navy">نام ساختگی</a></h1><p id="visibleLogo">نام نمایشی ساختگی</p></div></div></header>'
+
+;(async () => {
+  const h = await start('real-page-repairs')
+  const { page, context, open, setting, settle } = h
+  const failures = []
+  fs.mkdirSync(path.join(work, 'shots'), { recursive: true })
+  const test = async (name, run) => {
+    try { await run(); console.log('PASS', name) }
+    catch (e) { failures.push(name); console.error('FAIL', name, e.message) }
+  }
+  const enable = enabled => setting('setSite', { site: h.base, enabled })
+  const css = (selector, key) => page.locator(selector).evaluate((el, key) => getComputedStyle(el)[key], key)
+  try {
+    await setting('setFont', { font: { type: 'bundled' } })
+    await test('R1 mixedResult', async () => {
+      await enable(false); await open('mixedResult'); const off = await page.content()
+      await enable(true); await settle()
+      assert.equal(await css('#snippet', 'direction'), 'rtl')
+      assert.equal(await css('#snippet', 'unicodeBidi'), 'isolate')
+      assert.equal(await page.locator('#result').getAttribute('dir'), null)
+      assert.equal(await css('#result', 'direction'), 'ltr')
+      console.log('R1 line positions', await page.locator('#snippet,#title').evaluateAll(els => els.map(el => {
+        const range = document.createRange(); range.selectNodeContents(el)
+        const r = range.getBoundingClientRect(); return { id: el.id, x: r.x, right: r.right }
+      })))
+      await page.screenshot({ path: path.join(work, 'shots', 'fixture-mixed-result.png'), fullPage: true })
+      await enable(false); await settle(); assert.equal(await page.content(), off)
+      await enable(true)
+    })
+    await test('R2 citationChip', async () => {
+      await enable(false); await open('citationChip'); const off = await page.content()
+      const layout = () => page.locator('#chip,#flexChip,#gridChip').evaluateAll(els => els.map(el => ({
+        dir: getComputedStyle(el).direction,
+        iconOffset: el.querySelector('img').getBoundingClientRect().x - el.getBoundingClientRect().x,
+        width: el.getBoundingClientRect().width
+      })))
+      const before = await layout()
+      await enable(true); await settle()
+      assert.equal(await css('#answer', 'direction'), 'rtl')
+      assert.deepEqual(await layout(), before, 'Latin inline boxes keep their internal layout')
+      await page.screenshot({ path: path.join(work, 'shots', 'fixture-citation-chip.png'), fullPage: true })
+      await enable(false); await settle(); assert.equal(await page.content(), off)
+      await enable(true)
+    })
+    await test('R5 hiddenLogo', async () => {
+      await enable(false); await open('hiddenLogo')
+      const originalFont = await css('#logo', 'fontFamily')
+      const box = await page.locator('#logo').boundingBox()
+      await enable(true); await settle()
+      assert.equal(await css('#logo', 'fontFamily'), originalFont, 'Zero-size image-replacement text keeps its own stack')
+      assert.deepEqual(await page.locator('#logo').boundingBox(), box)
+      await page.screenshot({ path: path.join(work, 'shots', 'fixture-hidden-logo.png'), fullPage: true })
+      assert((await fonts(context, page, '#visibleLogo')).some(f => /Vazirmatn/.test(f.familyName)))
+      await page.locator('#logo').evaluate(el => el.style.fontSize = '24px'); await settle()
+      assert((await fonts(context, page, '#logo')).some(f => /Vazirmatn/.test(f.familyName)), 'Logo text gets the font if the page makes it visible')
+    })
+    await test('S3 delayed state reply', async () => {
+      await enable(false); await open('tweet')
+      const client = await context.newCDPSession(page), worlds = []
+      client.on('Runtime.executionContextCreated', ({ context }) => worlds.push(context))
+      await client.send('Runtime.enable')
+      const world = worlds.find(w => w.origin.startsWith('chrome-extension://'))
+      const evaluate = expression => client.send('Runtime.evaluate', { contextId: world.id, expression, awaitPromise: true, returnByValue: true })
+      await evaluate(`(() => {
+        const send = chrome.runtime.sendMessage.bind(chrome.runtime)
+        globalThis.releaseState = null
+        chrome.runtime.sendMessage = async (...args) => {
+          const reply = await send(...args)
+          if (args[0]?.type === 'state') await new Promise(resolve => globalThis.releaseState = resolve)
+          return reply
+        }
+      })()`)
+      let settingsReturned = false
+      const requested = enable(true).then(() => { settingsReturned = true })
+      let returned = false
+      const waiting = settle().then(() => { returned = true })
+      try {
+        const held = await evaluate(`new Promise((resolve,reject) => { let n=0; function check() { if(globalThis.releaseState) resolve(__persianTypographyMetrics.idle); else if(++n>120) reject(new Error('No state request')); else requestAnimationFrame(check) } check() })`)
+        await page.evaluate(() => new Promise(resolve => { let n=0; function check() { if(++n===12) resolve(); else requestAnimationFrame(check) } check() }))
+        assert.equal(returned, false, 'settle returned before the requested settings applied')
+        assert.equal(settingsReturned, false, 'setting returned before the requested settings applied')
+        assert.equal(held.result.value, false, 'Pending state request must not be idle')
+      } finally { await evaluate('releaseState?.()'); await requested; await waiting; await client.detach() }
+      assert((await fonts(context, page, '#letters')).some(f => /Vazirmatn/.test(f.familyName)))
+    })
+  } finally { await h.close() }
+  assert.deepEqual(failures, [])
+})().catch(e => { console.error(e); process.exitCode = 1 })

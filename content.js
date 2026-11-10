@@ -12,14 +12,15 @@
   const RANGES = 'U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC'
   const originals = new Map()
   const dirty = new Set()
-  let config, frame = 0, walker = null, fontPromise, pendingFonts = 0
+  let config, frame = 0, walker = null, fontPromise, pendingFonts = 0, pendingStates = 0
   let previewFont = null, previewPort = null, updateVersion = 0
   const fontProfiles = new Map()
   let fontCanvas
   let pageHasPersian = false
   // Read-only diagnostics live in the isolated extension world, never in the page.
   const metrics = { total: 0, longest: 0, flushes: 0 }
-  Object.defineProperty(metrics, "idle", { enumerable: true, get: () => Boolean(config) && !frame && !walker && !pendingFonts })
+  Object.defineProperty(metrics, "idle", { enumerable: true, get: () => Boolean(config) && !frame && !walker && !pendingFonts && !pendingStates })
+  Object.defineProperty(metrics, "state", { enumerable: true, get: () => config && ({ enabled: config.enabled, font: config.font }) })
   globalThis.__persianTypographyMetrics = metrics
 
   function remember(el) {
@@ -76,6 +77,7 @@
       const display = getComputedStyle(current).display
       if (!INLINE_DISPLAY.test(display)) {
         if (/(?:flex|grid)/.test(display)) return current === el ? null : el
+        if (current !== el && !textBlock(current)) return el
         return current
       }
       el = current
@@ -110,6 +112,8 @@
   function font(el) {
     if (skipped(el)) return
     const css = getComputedStyle(el)
+    // Image-replacement logos hide their text at zero size; no font is drawn.
+    if (parseFloat(css.fontSize) === 0) return
     const stack = css.fontFamily.replace(/"?__PersianTypography(?:Bundled|System)\d*"?\s*,?\s*/g, "") || "sans-serif"
     const original = `${css.fontStyle} ${css.fontWeight} ${css.fontSize} ${stack}`
     let profile = fontProfiles.get(original)
@@ -195,6 +199,12 @@
       if (!el.isConnected || roots.some(root => root === el || root.contains?.(el))) restore(el)
     }
     for (const root of roots) collect(root, holders, blocks, groups, fields)
+    const inlineDirections = new Map()
+    for (const el of new Set([...blocks, ...groups])) {
+      for (const box of el.querySelectorAll("*")) {
+        if (/^inline-(?:block|flex|grid|table)$/.test(getComputedStyle(box).display) && !skipped(box) && !editable(box) && dominantDirection(readable(box)) !== "rtl") inlineDirections.set(box, getComputedStyle(box).direction)
+      }
+    }
     const turned = new Set()
     for (const group of groups) {
       if (group.matches("ul,ol,table")) {
@@ -218,6 +228,12 @@
           prop(code, "unicode-bidi", "isolate")
           if (/^(PRE|CODE|KBD|SAMP)$/.test(code.tagName)) prop(code, "text-align", "left")
         }
+      }
+    }
+    for (const [box, dir] of inlineDirections) {
+      if (getComputedStyle(box).direction !== dir) {
+        prop(box, "direction", dir)
+        prop(box, "unicode-bidi", "isolate")
       }
     }
     for (const el of holders) font(el)
@@ -286,7 +302,8 @@
   }
   async function update() {
     const version = ++updateVersion
-    const next = await chrome.runtime.sendMessage({ type: "state" })
+    pendingStates++
+    const next = await chrome.runtime.sendMessage({ type: "state" }).finally(() => pendingStates--)
     if (!next || next.error) return
     // Scan the completed parse once; parser mutations otherwise rescan the same page.
     if (document.readyState === "loading") await new Promise(resolve => document.addEventListener("DOMContentLoaded", resolve, { once: true }))

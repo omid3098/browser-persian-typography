@@ -48,15 +48,25 @@ async function start(name, { extension = true } = {}) {
   const control = await context.newPage()
   if (extension) await control.goto(new URL("manifest.json", worker.url()).href)
   async function setting(operation, args = {}) {
-    return control.evaluate(async ({ operation, args }) => {
+    const result = await control.evaluate(async ({ operation, args }) => {
       const api = await import(chrome.runtime.getURL("settings.js"))
       if (operation === "setSite") return api.setSite(args.site, args.enabled)
       if (operation === "setFont") return api.setFont(args.font)
       return api[operation](args.site)
     }, { operation, args })
+    if (["setSite", "switchSite", "setFont"].includes(operation)) {
+      for (const p of context.pages().filter(p => /^https?:/.test(p.url()))) {
+        const expected = operation === "setFont" ? { font: result } : { enabled: await control.evaluate(async url => {
+          const api = await import(chrome.runtime.getURL("settings.js"))
+          return api.readSite(url)
+        }, p.url()) }
+        await settle(p, expected)
+      }
+    }
+    return result
   }
   const page = await context.newPage()
-  async function settle(p = page) {
+  async function settle(p = page, expected = {}) {
     if (!extension) { await p.evaluate(() => document.fonts.ready); return }
     // Wait for a concrete engine state in its isolated world, not a time guess.
     const client = await context.newCDPSession(p)
@@ -67,7 +77,18 @@ async function start(name, { extension = true } = {}) {
     if (!world) throw new Error(`No extension world: ${JSON.stringify(worlds)}`)
     const result = await client.send("Runtime.evaluate", {
       contextId: world.id,
-      expression: `new Promise((resolve, reject) => { let n = 0; function check() { if (++n > 600) return reject(new Error('Engine did not become idle')); if (globalThis.__persianTypographyMetrics?.idle && n > 3) resolve(); else requestAnimationFrame(check) } requestAnimationFrame(check) })`,
+      expression: `new Promise((resolve, reject) => {
+        const expected = ${JSON.stringify(expected)}; let n = 0
+        function check() {
+          const metrics = globalThis.__persianTypographyMetrics, state = metrics?.state
+          if (++n > 600) return reject(new Error('Engine did not become idle: ' + JSON.stringify({ expected, metrics })))
+          const matches = (!('enabled' in expected) || state?.enabled === expected.enabled) &&
+            (!expected.font || (state?.font?.type === expected.font.type && state?.font?.family === expected.font.family))
+          if (metrics?.idle && n > 3 && matches) resolve()
+          else requestAnimationFrame(check)
+        }
+        requestAnimationFrame(check)
+      })`,
       awaitPromise: true, returnByValue: true
     })
     if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails))

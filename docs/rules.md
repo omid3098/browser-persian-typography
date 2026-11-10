@@ -28,6 +28,8 @@ with its words out of order, in the system's fallback font.
   Text fields and editable areas get it too, so typed Persian shows in it.
   On a page without Persian, empty or Latin-only fields are left untouched;
   typing Persian activates the field. This keeps the no-write budget below.
+  Zero-size text used behind an image logo keeps its font stack; it draws no
+  visible letters. If the page makes that text visible, F2 applies then.
 - **F3. Code fonts stay.** `pre`, `code`, `kbd`, `samp` and any element whose
   own font is monospace are not touched. Known limit: a font stack that names
   only a monospace face, such as Consolas, without the generic `monospace` is
@@ -58,6 +60,9 @@ with its words out of order, in the system's fallback font.
   images laid out inside a line) and `display: contents` do not split that block.
   A child with `display: block` does, even when it is a `span`. Each block is
   decided by its own readable text, so each line follows its own text.
+  When a container mixes block children with an inline text run, that run's
+  outer inline wrapper is isolated on its own. Its container and the run's
+  position on the line are kept; it does not get the prose alignment of D4.
 - **D3. A block with Persian is RTL.** It gets `dir="rtl"` and is isolated
   from its surroundings (`unicode-bidi: isolate`).
 - **D4. Alignment is written only for prose.** A paragraph, heading, list
@@ -101,6 +106,9 @@ with its words out of order, in the system's fallback font.
 - **D10. Layout is never mirrored.** A direction is set only on a text block,
   a real list or a data table. Never on a container of other blocks, a flex or
   grid row, the page or its `body`.
+  Inline boxes without Persian (inline-block, inline-flex, inline-grid and
+  inline-table) keep their original internal direction when a surrounding text
+  block turns RTL, including the order of an icon and a Latin site name.
 
 ## Behaviour
 
