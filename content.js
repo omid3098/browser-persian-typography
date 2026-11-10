@@ -108,6 +108,7 @@
     function read(parent) {
       for (const node of parent.childNodes) {
         if (node.nodeType === 3) text += node.data + separator
+        else if (node.nodeName === "BR") text += "\n"
         else if (node.nodeType === 1 && !node.matches(SKIP) && !node.matches(EDIT) && !(ownItem && node.matches("ul,ol,table"))) read(node)
       }
     }

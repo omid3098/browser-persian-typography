@@ -55,7 +55,9 @@ with its words out of order, in the system's fallback font.
   Before that test, the engine excludes address lines: a web address followed
   only by breadcrumb pieces starting with `›` gets no direction from us,
   including Persian slugs, in a block or an inline run. An address followed
-  by prose without that separator still follows D1.
+  by prose without that separator still follows D1, including Persian text
+  after a line break (`br`). Split text nodes inside an address stay joined
+  for the address-line check.
 - **D2. Block by block.** The unit is a text block: the nearest ancestor of a
   text node that lays its text out as lines, decided by computed display rather
   than the tag name (a paragraph, heading, list item,

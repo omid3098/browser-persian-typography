@@ -8,6 +8,7 @@ pages.mixedResult = '<div id="result"><h2 id="title"><a>عنوان ساختگی<
 pages.citationChip = '<div id="answer" style="display:flow-root">Sample این پاسخ ساختگی است <a id="chip" style="display:inline-block"><img src="/emoji.svg" style="width:16px;height:16px"><span>example.test</span></a><span id="flexChip" style="display:inline-flex"><img src="/emoji.svg" style="width:16px;height:16px">Latin site</span><span id="gridChip" style="display:inline-grid;grid-template-columns:16px auto"><img src="/emoji.svg" style="width:16px;height:16px">Latin grid</span></div>'
 pages.hiddenLogo = '<header><div style="display:flex"><div><h1><a id="logo" style="display:block;font:0 a;width:220px;height:80px;background:navy">نام ساختگی</a></h1><p id="visibleLogo">نام نمایشی ساختگی</p></div></div></header>'
 pages.addressLines = '<div id="addressBlock">https://example.test › lessons › درس-ساختگی-ab123</div><div style="display:flex"><span id="addressRun" dir="ltr"><span>https://<span>example.test</span></span><span> › lessons › درس-ساختگی-ab123</span></span></div><p id="addressProse">https://example.test این جمله ساختگی است</p>'
+pages.addressBreaks = '<p id="breakBlock">https://example.test<br>ممنون</p><div style="display:flex"><span id="breakRun" dir="ltr"><a>https://<span>example.test</span></a><br>ممنون</span></div><p id="breakSentence">https://example.test<br>این جمله ساختگی است</p>'
 pages.fieldStyles = '<style>textarea,input{font:16px Arial,sans-serif}</style><p>متن ساختگی</p><div dir="rtl" style="display:flex"><textarea id="bareTextarea"></textarea><input id="bareInput"><input id="emptyStyle" style=""><input id="authoredStyle" style="color:navy"><input id="changedStyle"></div>'
 
 ;(async () => {
@@ -23,6 +24,14 @@ pages.fieldStyles = '<style>textarea,input{font:16px Arial,sans-serif}</style><p
   const css = (selector, key) => page.locator(selector).evaluate((el, key) => getComputedStyle(el)[key], key)
   try {
     await setting('setFont', { font: { type: 'bundled' } })
+    await test('R8 address followed by a line break and Persian follows D1', async () => {
+      await enable(false); await open('addressBreaks'); const off = await page.content()
+      await enable(true); await settle()
+      for (const selector of ['#breakBlock', '#breakRun', '#breakSentence']) {
+        assert.equal(await css(selector, 'direction'), 'rtl', selector)
+      }
+      await enable(false); await settle(); assert.equal(await page.content(), off)
+    })
     await test('R6 address breadcrumbs keep page direction', async () => {
       await enable(false); await open('addressLines'); const off = await page.content()
       const bidi = await page.locator('#addressBlock,#addressRun').evaluateAll(els => els.map(el => getComputedStyle(el).unicodeBidi))
