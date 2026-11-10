@@ -204,4 +204,5 @@ What the checks do:
 
 - The font is [Vazirmatn](https://github.com/rastikerdar/vazirmatn), copyright 2015 The Vazirmatn Project Authors, under the SIL Open Font License 1.1. The licence text is in [`fonts/OFL.txt`](fonts/OFL.txt) and ships with the extension.
 - The direction rules come from [t3code-persian-typography](https://github.com/omid3098/t3code-persian-typography).
+- The emoji in the first picture are [Twemoji](https://github.com/twitter/twemoji) graphics, copyright Twitter, Inc and other contributors, under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). They appear only in that picture, not in the extension.
 - The extension is released under the MIT licence. See [`LICENSE`](LICENSE).
