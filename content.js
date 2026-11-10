@@ -190,8 +190,9 @@
     prop(el, "font-family", `${profile.families}, ${stack}`)
   }
   function collect(root, holders, blocks, groups, fields) {
-    function candidate(el) {
+    function candidate(el, slot) {
       if (skipped(el)) return
+      if (slot || el.assignedSlot) candidate(slot || el.assignedSlot)
       pageHasPersian = true
       const editor = editable(el)
       if (editor) { fields.add(editor); return }
@@ -210,7 +211,7 @@
       }
     }
     if (root.nodeType === 3) {
-      if (ARABIC.test(root.data)) candidate(root.parentElement || root.getRootNode().host)
+      if (ARABIC.test(root.data)) candidate(root.parentElement || root.getRootNode().host, root.assignedSlot)
       return
     }
     if (root.nodeType !== 1 && root.nodeType !== 11 && root !== document) return
@@ -219,7 +220,7 @@
       if (!editable(field) || editable(field) === field) fields.add(field)
     }
     const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
-    for (let node; (node = walk.nextNode());) if (ARABIC.test(node.data)) candidate(node.parentElement || node.getRootNode().host)
+    for (let node; (node = walk.nextNode());) if (ARABIC.test(node.data)) candidate(node.parentElement || node.getRootNode().host, node.assignedSlot)
     for (const shadow of shadowRoots) {
       if (root === shadow.host || root.contains(shadow.host)) collect(shadow, holders, blocks, groups, fields)
     }
@@ -233,7 +234,7 @@
     for (const root of roots) collect(root, holders, blocks, groups, fields)
     const inlineDirections = new Map()
     for (const el of new Set([...blocks, ...groups])) {
-      for (const box of el.querySelectorAll("*")) {
+      for (const box of (el.shadowRoot || el).querySelectorAll("*")) {
         if (/^inline-(?:block|flex|grid|table)$/.test(getComputedStyle(box).display) && !skipped(box) && !editable(box) && dominantDirection(readable(box)) !== "rtl") inlineDirections.set(box, getComputedStyle(box).direction)
       }
     }

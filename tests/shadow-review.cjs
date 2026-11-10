@@ -40,6 +40,22 @@ const { start } = require('./harness.cjs')
       for (const id of ['slotText', 'slotInline']) assert.equal(await css(id, 'direction'), 'rtl', id)
       assert.equal(await h.page.locator('#slotBlocks').getAttribute('dir'), null, 'block host must not mirror its block children')
     })
+    await check('S2 wrapped slot turns its text block and restores exactly', async () => {
+      await h.setting('setSite', { site: h.base, enabled: false })
+      await h.page.evaluate(() => {
+        const host = document.body.appendChild(document.createElement('div')); host.id = 'wrappedSlotReview'
+        host.textContent = 'Demo نوشته آزمایشی'
+        host.attachShadow({ mode: 'open' }).innerHTML = '<p id="wrappedSlotParagraphReview"><slot></slot></p>'
+      })
+      const markup = () => h.page.locator('#wrappedSlotReview').evaluate(el => [el.outerHTML, el.shadowRoot.innerHTML])
+      const before = await markup()
+      await h.setting('setSite', { site: h.base, enabled: true })
+      assert.equal(await css('wrappedSlotParagraphReview', 'direction'), 'rtl')
+      assert.equal(await h.page.locator('#wrappedSlotReview').getAttribute('dir'), null, 'host with a block child must not turn')
+      await h.setting('setSite', { site: h.base, enabled: false })
+      assert.deepEqual(await markup(), before, 'B2 restores light and shadow markup exactly')
+      await h.setting('setSite', { site: h.base, enabled: true })
+    })
     await check('S4 native attach result survives page overrides', async () => {
       const result = await h.page.evaluate(() => {
         const host = document.body.appendChild(document.createElement('div'))
@@ -57,6 +73,25 @@ const { start } = require('./harness.cjs')
         host.attachShadow({ mode: 'open' }).innerHTML = 'متن فارسی <code id="directCodeReview">English code</code>'
       }); await h.settle()
       assert.equal(await css('directCodeReview', 'direction'), 'ltr')
+    })
+    await check('S7 direct shadow inline box keeps its order and restores exactly', async () => {
+      await h.setting('setSite', { site: h.base, enabled: false })
+      await h.page.evaluate(() => {
+        const host = document.body.appendChild(document.createElement('div')); host.id = 'inlineBoxHostReview'; host.style.display = 'block'
+        host.attachShadow({ mode: 'open' }).innerHTML = 'نوشته آزمایشی <a id="inlineBoxReview" style="display:inline-flex"><b>+</b>Demo link</a>'
+      })
+      const markup = () => h.page.locator('#inlineBoxHostReview').evaluate(el => [el.outerHTML, el.shadowRoot.innerHTML])
+      const before = await markup()
+      await h.setting('setSite', { site: h.base, enabled: true })
+      assert.equal(await css('inlineBoxHostReview', 'direction'), 'rtl')
+      assert.equal(await css('inlineBoxReview', 'direction'), 'ltr')
+      assert.equal(await h.page.locator('#inlineBoxReview').evaluate(el => {
+        const text = document.createRange(); text.selectNode(el.lastChild)
+        return el.firstChild.getBoundingClientRect().right <= text.getBoundingClientRect().left
+      }), true, 'icon stays before the Latin label')
+      await h.setting('setSite', { site: h.base, enabled: false })
+      assert.deepEqual(await markup(), before, 'B2 restores the host and inline box exactly')
+      await h.setting('setSite', { site: h.base, enabled: true })
     })
     await check('announcements survive disconnected nesting and switching off', async () => {
       await h.setting('setSite', { site: h.base, enabled: false }); await h.settle()
