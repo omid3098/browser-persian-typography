@@ -52,6 +52,10 @@ with its words out of order, in the system's fallback font.
   URLs, paths, email addresses and hashes are ignored; then one Arabic-script
   letter makes the text `rtl`, Latin letters alone make it `ltr`, anything else
   gives no direction.
+  Before that test, the engine excludes address lines: a web address followed
+  only by breadcrumb pieces starting with `›` gets no direction from us,
+  including Persian slugs, in a block or an inline run. An address followed
+  by prose without that separator still follows D1.
 - **D2. Block by block.** The unit is a text block: the nearest ancestor of a
   text node that lays its text out as lines, decided by computed display rather
   than the tag name (a paragraph, heading, list item,

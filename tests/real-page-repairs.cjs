@@ -7,6 +7,8 @@ const { start, fonts, pages, work } = require('./harness.cjs')
 pages.mixedResult = '<div id="result"><h2 id="title"><a>عنوان ساختگی</a></h2><div style="display:flex">example.test</div><a id="snippet">Sample این توضیح ساختگی برای آزمون جهت متن است و با یک نام لاتین شروع می‌شود.</a><div>Footer</div></div>'
 pages.citationChip = '<div id="answer" style="display:flow-root">Sample این پاسخ ساختگی است <a id="chip" style="display:inline-block"><img src="/emoji.svg" style="width:16px;height:16px"><span>example.test</span></a><span id="flexChip" style="display:inline-flex"><img src="/emoji.svg" style="width:16px;height:16px">Latin site</span><span id="gridChip" style="display:inline-grid;grid-template-columns:16px auto"><img src="/emoji.svg" style="width:16px;height:16px">Latin grid</span></div>'
 pages.hiddenLogo = '<header><div style="display:flex"><div><h1><a id="logo" style="display:block;font:0 a;width:220px;height:80px;background:navy">نام ساختگی</a></h1><p id="visibleLogo">نام نمایشی ساختگی</p></div></div></header>'
+pages.addressLines = '<div id="addressBlock">https://example.test › lessons › درس-ساختگی-ab123</div><div style="display:flex"><span id="addressRun" dir="ltr">https://example.test <span>› lessons</span><span> › درس-ساختگی-ab123</span></span></div><p id="addressProse">https://example.test این جمله ساختگی است</p>'
+pages.fieldStyles = '<style>textarea,input{font:16px Arial,sans-serif}</style><p>متن ساختگی</p><div style="display:flex"><textarea id="bareTextarea"></textarea><input id="bareInput"><input id="emptyStyle" style=""><input id="authoredStyle" style="color:navy"><input id="changedStyle"></div>'
 
 ;(async () => {
   const h = await start('real-page-repairs')
@@ -21,6 +23,27 @@ pages.hiddenLogo = '<header><div style="display:flex"><div><h1><a id="logo" styl
   const css = (selector, key) => page.locator(selector).evaluate((el, key) => getComputedStyle(el)[key], key)
   try {
     await setting('setFont', { font: { type: 'bundled' } })
+    await test('R6 address breadcrumbs keep page direction', async () => {
+      await enable(false); await open('addressLines'); const off = await page.content()
+      await enable(true); await settle()
+      for (const selector of ['#addressBlock', '#addressRun']) {
+        assert.equal(await css(selector, 'direction'), 'ltr', selector)
+        assert.equal(await css(selector, 'unicodeBidi'), 'normal', selector)
+        assert.equal(await page.locator(selector).evaluate(el => el.style.direction), '')
+      }
+      assert.equal(await css('#addressProse', 'direction'), 'rtl', 'An address followed by prose is still decided by its text')
+      await enable(false); await settle(); assert.equal(await page.content(), off)
+    })
+    await test('R7 field style attributes restore exactly', async () => {
+      await enable(false); await open('fieldStyles')
+      const styles = () => page.locator('textarea,input').evaluateAll(els => els.map(el => el.getAttribute('style')))
+      const before = await styles()
+      await enable(true); await settle()
+      assert((await styles()).every(style => /font-family:.*__PersianTypography/.test(style)), `Fields must actually receive our font: ${JSON.stringify(await styles())}`)
+      await page.locator('#changedStyle').evaluate(el => el.style.color = 'red'); await settle()
+      await enable(false); await settle()
+      assert.deepEqual(await styles(), [...before.slice(0, -1), 'color: red;'], 'Absent, empty and authored styles return; page edits survive')
+    })
     await test('R1 mixedResult', async () => {
       await enable(false); await open('mixedResult'); const off = await page.content()
       await enable(true); await settle()

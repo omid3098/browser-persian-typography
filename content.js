@@ -128,6 +128,12 @@
     prop(el, "unicode-bidi", "isolate")
     if (PROSE.test(el.tagName) && ["start", "left"].includes(getComputedStyle(el).textAlign)) prop(el, "text-align", "start")
   }
+  function blockDirection(el, ownItem = false) {
+    const text = readable(el, ownItem)
+    // Search-result address breadcrumbs are navigation, even with Persian slugs.
+    if (/^\s*(?:https?:\/\/|www\.)[^\s›]+(?:\s*›\s*[^\s›][^›]*)*\s*$/iu.test(text)) return null
+    return dominantDirection(text)
+  }
   function font(el) {
     if (skipped(el)) return
     const css = getComputedStyle(el)
@@ -225,7 +231,7 @@
     const inlineDirections = new Map()
     for (const el of new Set([...blocks, ...groups].map(block => block instanceof ShadowRoot ? block.host : block))) {
       for (const box of [...el.querySelectorAll("*"), ...(el.shadowRoot?.querySelectorAll("*") || [])]) {
-        if (/^inline-(?:block|flex|grid|table)$/.test(getComputedStyle(box).display) && !skipped(box) && !editable(box) && dominantDirection(readable(box)) !== "rtl") inlineDirections.set(box, getComputedStyle(box).direction)
+        if (/^inline-(?:block|flex|grid|table)$/.test(getComputedStyle(box).display) && !skipped(box) && !editable(box) && blockDirection(box) !== "rtl") inlineDirections.set(box, getComputedStyle(box).direction)
       }
     }
     const turned = new Set()
@@ -233,9 +239,9 @@
       if (group.matches("ul,ol,table")) {
         const selector = group.matches("table") ? "td,th" : "li"
         const items = [...group.querySelectorAll(selector)].filter(item => item.closest("ul,ol,table") === group)
-        const directions = items.map(item => dominantDirection(readable(item, true))).filter(Boolean)
+        const directions = items.map(item => blockDirection(item, true)).filter(Boolean)
         if (directions.filter(dir => dir === "rtl").length <= directions.length / 2) continue
-      } else if (dominantDirection(readable(group)) !== "rtl") continue
+      } else if (blockDirection(group) !== "rtl") continue
       direction(group, "rtl")
       turned.add(group)
       for (const item of group.querySelectorAll("*")) {
@@ -245,7 +251,7 @@
     for (const block of blocks) {
       // Direct root text uses the host, but is read separately from its light text.
       const el = block instanceof ShadowRoot ? block.host : block
-      const dir = dominantDirection(readable(block))
+      const dir = blockDirection(block)
       if (dir === "rtl" || (dir === "ltr" && Array.from(turned).some(group => group.contains(el)))) direction(el, dir)
       if (dir === "rtl") {
         for (const code of [...el.querySelectorAll(CODE), ...(el.shadowRoot?.querySelectorAll(CODE) || [])]) {
