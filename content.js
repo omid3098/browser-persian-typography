@@ -6,6 +6,7 @@
   const SKIP = 'pre,code,kbd,samp,svg,math,.katex,mjx-container,.MathJax,.xterm,.cm-editor,.monaco-editor,bdo,script,style,noscript,template'
   const CODE = 'pre,code,kbd,samp,svg,math,.katex,mjx-container,.MathJax,.xterm,.cm-editor,.monaco-editor'
   const PROSE = /^(P|H[1-6]|LI|BLOCKQUOTE|DT|DD|TD|TH|SUMMARY)$/
+  const INLINE_DISPLAY = /^(?:inline(?:$|[- ])|contents$)/
   const INPUT = 'textarea,input:not([type]),input[type="text"],input[type="search"],input[type="email"],input[type="url"],input[type="tel"]'
   const EDIT = '[contenteditable]:not([contenteditable="false"])'
   const RANGES = 'U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC'
@@ -73,8 +74,10 @@
     let current = el
     while (current && !/^(HTML|BODY)$/.test(current.tagName)) {
       const display = getComputedStyle(current).display
-      if (/(?:flex|grid)/.test(display)) return current === el ? null : el
-      if (display !== "inline" && display !== "contents") return current
+      if (!INLINE_DISPLAY.test(display)) {
+        if (/(?:flex|grid)/.test(display)) return current === el ? null : el
+        return current
+      }
       el = current
       current = current.parentElement
     }
@@ -95,7 +98,7 @@
     if (!el || /^(HTML|BODY)$/.test(el.tagName)) return false
     if (/(?:flex|grid)/.test(getComputedStyle(el).display)) return false
     // A container of other blocks is never made into a direction boundary.
-    return !Array.from(el.children).some(child => !child.matches(SKIP) && !["inline", "contents"].includes(getComputedStyle(child).display))
+    return !Array.from(el.children).some(child => !child.matches(SKIP) && !INLINE_DISPLAY.test(getComputedStyle(child).display))
   }
   function direction(el, dir) {
     if (el.getAttribute("dir") !== "rtl") attr(el, "dir", dir)

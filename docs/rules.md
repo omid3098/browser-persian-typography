@@ -53,7 +53,10 @@ with its words out of order, in the system's fallback font.
 - **D2. Block by block.** The unit is a text block: the nearest ancestor of a
   text node that lays its text out as lines, decided by computed display rather
   than the tag name (a paragraph, heading, list item,
-  table cell, quote, or a `div` that holds text directly). Each block is
+  table cell, quote, or a `div` that holds text directly). Inline-level children
+  (`inline`, `inline-block`, `inline-flex`, `inline-grid`, `inline-table`, including
+  images laid out inside a line) and `display: contents` do not split that block.
+  A child with `display: block` does, even when it is a `span`. Each block is
   decided by its own readable text, so each line follows its own text.
 - **D3. A block with Persian is RTL.** It gets `dir="rtl"` and is isolated
   from its surroundings (`unicode-bidi: isolate`).

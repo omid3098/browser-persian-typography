@@ -71,6 +71,7 @@ through the browser's storage change event.
 
 Node.js and Python with `psutil` are needed for development checks only.
 Every browser run is headless and uses its own profile under `.agent-work/engine`.
+Set `PERSIAN_TYPOGRAPHY_WORK` to use another work folder for profiles and artifacts.
 
 ```powershell
 $env:TEMP = "$PWD\.agent-work\engine\tmp"

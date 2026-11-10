@@ -17,6 +17,34 @@ const { start, fonts, chat } = require("./harness.cjs")
     assert.equal(await css("#tweet", "textAlign"), "start")
     console.log("PASS a: strict CSP tweet direction and actual Persian/Latin fonts", JSON.stringify(used))
 
+    await off(); await open("tweetEmoji")
+    const emojiOriginal = await page.content()
+    assert.equal(await css("#emojiLatin", "direction"), "ltr", "X auto starts from the Latin name")
+    await on(); await settle()
+    for (const selector of ["#emojiPersian", "#emojiLatin"]) {
+      assert.equal(await css(`${selector} img`, "display"), "inline-block")
+      assert(await page.locator(`${selector} img`).evaluate(img => img.complete && img.naturalWidth > 0))
+      assert.equal(await page.locator(selector).getAttribute("dir"), "rtl", `${selector}: emoji must not split the post`)
+      await rtl(selector)
+      assert.equal(await css(selector, "unicodeBidi"), "isolate")
+    }
+    // Inline wrappers belong to the post too, even when they establish their own layout.
+    for (const display of ["inline-block", "inline-flex", "inline-grid", "inline-table"]) {
+      await page.locator('.emoji-posts span').evaluateAll((spans, display) => {
+        for (const span of spans) span.style.display = display
+      }, display)
+      await settle()
+      for (const selector of ["#emojiPersian", "#emojiLatin"]) {
+        assert.equal(await page.locator(selector).getAttribute("dir"), "rtl", display)
+      }
+    }
+    await off(); await open("tweetEmoji")
+    assert.equal(await page.content(), emojiOriginal, "emoji fixture stays unchanged while off")
+    await on(); await settle(); await off(); await settle()
+    assert.equal(await page.content(), emojiOriginal, "emoji post direction is reversible")
+    await on(); await settle()
+    console.log("PASS D2/D7: Persian-first and Latin-first X posts with inline-block emoji get RTL isolation")
+
     await open("linkedin"); await rtl("#post"); await rtl("#wrapper")
     console.log("PASS b: authored LTR inline wrapper")
     await open("chat"); await rtl("h2"); await rtl("#list"); await rtl("#data")
