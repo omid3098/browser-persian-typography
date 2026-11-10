@@ -117,7 +117,7 @@ const { start, fonts, chat } = require("./harness.cjs")
       canvas.width = 256; canvas.height = 80
       const ink = weight => {
         ctx.clearRect(0, 0, 256, 80)
-        ctx.font = `${weight} 32px "__PersianTypographySystem"`
+      ctx.font = `${weight} 32px ${getComputedStyle(document.querySelector('#letters')).fontFamily.split(',')[0]}`
         ctx.fillText("فارسی", 0, 45)
         const data = ctx.getImageData(0, 0, 256, 80).data
         let alpha = 0

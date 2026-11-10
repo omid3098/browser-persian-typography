@@ -9,16 +9,16 @@
   const INLINE = /^(A|ABBR|B|BDI|BR|CITE|DFN|EM|I|MARK|Q|S|SMALL|SPAN|STRONG|SUB|SUP|TIME|U|WBR)$/
   const INPUT = 'textarea,input:not([type]),input[type="text"],input[type="search"],input[type="email"],input[type="url"],input[type="tel"]'
   const EDIT = '[contenteditable]:not([contenteditable="false"])'
-  const BUNDLED = '"__PersianTypographyBundled"'
-  const SYSTEM = '"__PersianTypographySystem"'
   const RANGES = 'U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC'
   const originals = new Map()
   const dirty = new Set()
-  let config, frame = 0, walker = null, fontPromise, bundledFace, systemFace
+  let config, frame = 0, walker = null, fontPromise, pendingFonts = 0
+  const fontProfiles = new Map()
+  let fontCanvas
   let pageHasPersian = false
   // Read-only diagnostics live in the isolated extension world, never in the page.
   const metrics = { total: 0, longest: 0, flushes: 0 }
-  Object.defineProperty(metrics, "idle", { enumerable: true, get: () => Boolean(config) && !frame && !walker })
+  Object.defineProperty(metrics, "idle", { enumerable: true, get: () => Boolean(config) && !frame && !walker && !pendingFonts })
   globalThis.__persianTypographyMetrics = metrics
 
   function remember(el) {
@@ -106,28 +106,52 @@
   }
   function font(el) {
     if (skipped(el)) return
-    ensureFont()
-    const stack = getComputedStyle(el).fontFamily.replace(/"?__PersianTypography(?:Bundled|System)"?\s*,?\s*/g, "")
-    prop(el, "font-family", `${config.font.type === "system" ? SYSTEM + ", " : ""}${BUNDLED}, ${stack || "sans-serif"}`)
-  }
-  function ensureFont() {
-    if (!fontPromise) {
-      // A binary FontFace is not a page stylesheet or a CSP-controlled font URL.
-      fontPromise = fetch(chrome.runtime.getURL("fonts/Vazirmatn.woff2"))
-        .then(response => response.arrayBuffer())
-        .then(data => {
-          bundledFace = new FontFace("__PersianTypographyBundled", data, { unicodeRange: RANGES, weight: "100 900", display: "swap" })
-          if (config.enabled) document.fonts.add(bundledFace)
-          return bundledFace.load()
-        }).catch(() => { fontPromise = null })
-    } else if (bundledFace) document.fonts.add(bundledFace)
-    if (config.font.type === "system" && !systemFace) {
-      const family = JSON.stringify(config.font.family)
-      // local() is a single face, not a variable font: allow normal bold synthesis.
-      systemFace = new FontFace("__PersianTypographySystem", `local(${family})`, { unicodeRange: RANGES, weight: "400", display: "swap" })
-      document.fonts.add(systemFace)
-      systemFace.load().catch(() => {}) // The bundled face is next in the stack.
+    const css = getComputedStyle(el)
+    const stack = css.fontFamily.replace(/"?__PersianTypography(?:Bundled|System)\d*"?\s*,?\s*/g, "") || "sans-serif"
+    const original = `${css.fontStyle} ${css.fontWeight} ${css.fontSize} ${stack}`
+    let profile = fontProfiles.get(original)
+    if (!profile) {
+      fontCanvas ||= document.createElement("canvas").getContext("2d")
+      fontCanvas.font = original
+      const sample = "گچ‌پژ کِ لُ"
+      const before = fontCanvas.measureText(sample)
+      const size = parseFloat(css.fontSize)
+      const id = fontProfiles.size
+      const faces = []
+      const families = []
+      function add(kind, source, weight) {
+        const family = `__PersianTypography${kind}${id}`
+        families.push(JSON.stringify(family))
+        const overrides = {
+          unicodeRange: RANGES, weight, style: css.fontStyle, display: "swap",
+          ascentOverride: `${before.fontBoundingBoxAscent / size * 100}%`,
+          descentOverride: `${before.fontBoundingBoxDescent / size * 100}%`, lineGapOverride: "0%"
+        }
+        pendingFonts++
+        Promise.resolve(source).then(data => {
+          const face = new FontFace(family, data, overrides)
+          faces.push(face)
+          if (config.enabled && fontProfiles.get(original) === profile) document.fonts.add(face)
+          return face.load().then(() => {
+            // Keep ink whole when the replacement cannot fit the original measures.
+            fontCanvas.font = `${css.fontStyle} ${css.fontWeight} ${css.fontSize} ${JSON.stringify(family)}`
+            const ink = fontCanvas.measureText(sample)
+            const descent = Math.ceil(ink.actualBoundingBoxDescent)
+            const height = Math.max(before.fontBoundingBoxAscent + before.fontBoundingBoxDescent, Math.ceil(ink.actualBoundingBoxAscent) + descent)
+            const ascent = Math.min(Math.max(before.fontBoundingBoxAscent, ink.actualBoundingBoxAscent), height - descent)
+            face.ascentOverride = `${ascent / size * 100}%`
+            face.descentOverride = `${(height - ascent) / size * 100}%`
+          })
+        }).catch(() => {}).finally(() => pendingFonts--)
+      }
+      if (config.font.type === "system") add("System", `local(${JSON.stringify(config.font.family)})`, "400")
+      // One shared binary fetch bypasses page font/style CSP; profiles only change metrics.
+      fontPromise ||= fetch(chrome.runtime.getURL("fonts/Vazirmatn.woff2")).then(response => response.arrayBuffer())
+      add("Bundled", fontPromise, "100 900")
+      profile = { faces, families: families.join(", ") }
+      fontProfiles.set(original, profile)
     }
+    prop(el, "font-family", `${profile.families}, ${stack}`)
   }
   function collect(root, holders, blocks, groups, fields) {
     function candidate(el) {
@@ -267,11 +291,10 @@
     frame = 0; walker = null; dirty.clear()
     pageHasPersian = false
     for (const el of originals.keys()) restore(el)
-    if (systemFace) document.fonts.delete(systemFace)
-    systemFace = null
+    for (const profile of fontProfiles.values()) for (const face of profile.faces) document.fonts.delete(face)
+    fontProfiles.clear()
     config = next
     if (!config.enabled) {
-      if (bundledFace) document.fonts.delete(bundledFace)
       const time = performance.now() - start
       metrics.total += time; metrics.longest = Math.max(metrics.longest, time)
       return

@@ -36,6 +36,11 @@ with its words out of order, in the system's fallback font.
   it when the system no longer has it.
 - **F5. Strict pages.** The font must load on a page whose Content Security
   Policy allows fonts and styles only from itself, as x.com does.
+- **F6. Lines keep their height.** The font's vertical measures are overridden
+  so a line of Persian text is as tall with the extension on as it was with
+  the extension off, where the page leaves the line height to the font. This
+  holds for the bundled font and for a font the user chose. Line breaks may
+  still change, because letters have other widths.
 
 ## Direction
 
@@ -90,9 +95,6 @@ with its words out of order, in the system's fallback font.
 - **D10. Layout is never mirrored.** A direction is set only on a text block,
   a real list or a data table. Never on a container of other blocks, a flex or
   grid row, the page or its `body`.
-  A font change can still change glyph widths, line height and wrapping. The
-  native-RTL fixture's navigation grows from 18 to 25 px with Vazirmatn; this
-  rule preserves layout direction and alignment, not identical font metrics.
 
 ## Behaviour
 
