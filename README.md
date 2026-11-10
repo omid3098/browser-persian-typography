@@ -91,6 +91,8 @@ npm run check:live
 
 For a bounded run with a retained log, prefix a command with
 `python C:\Users\Omid\.agents\tools\waitfor.py --cap 6 --log .agent-work/engine/check.log -- cmd /c`.
+`npm run budget:idle` needs `--cap 25`: it watches two browsers for about six
+minutes each and took 19 minutes in one run.
 
 Unit checks copy the T3 runtime's direction cases. The end-to-end checks load
 the unpacked extension in real Chromium and serve their own HTTP fixtures.

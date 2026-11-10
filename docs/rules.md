@@ -29,7 +29,9 @@ with its words out of order, in the system's fallback font.
   On a page without Persian, empty or Latin-only fields are left untouched;
   typing Persian activates the field. This keeps the no-write budget below.
 - **F3. Code fonts stay.** `pre`, `code`, `kbd`, `samp` and any element whose
-  own font is monospace are not touched.
+  own font is monospace are not touched. Known limit: a font stack that names
+  only a monospace face, such as Consolas, without the generic `monospace` is
+  not recognised and gets the Persian font.
 - **F4. The user's font.** The default is the bundled Vazirmatn. The user may
   pick a font installed on their system instead; it is used under F1 to F3 the
   same way (Persian letters only, bold stays bold), and Vazirmatn stands behind
@@ -168,6 +170,10 @@ worker host. The popup reads that cache, rechecking if the installed family list
 changed or the answer is not ready yet. The complete main view
 must appear within 100 ms of opening; the complete font view within 1.5 s
 the first time and 200 ms later. Each budget must pass all five measurements.
+The font view's budgets are measured after the background's check has ended.
+Known limit: a font view opened before that, in the first seconds after the
+extension is installed, runs the popup's own check; it took 2.9 and 4.7 s in
+two measured runs.
 
 `npm run build` copies only shipped files to the ignored `dist/` folder.
 Source edits do not change that loadable copy; only another build does.
