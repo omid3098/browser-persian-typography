@@ -122,6 +122,8 @@ with its words out of order, in the system's fallback font.
   reports `attachShadow` calls without reading text; initial scans and inserted
   subtrees also find existing and declarative roots. Input events use their
   original target inside an open root, so typing activates its fields too.
+  The initial scan finds shadow hosts and text in one sliced traversal, without
+  a separate element-discovery pass over the page.
 - **B2. Off means untouched.** With the site switched off, or after it is
   switched off on an open page, the page is exactly as it was written: every
   `dir`, style and attribute the extension added is taken back, at once and

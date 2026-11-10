@@ -279,7 +279,7 @@
   }
   function scan(root) {
     for (const field of root.querySelectorAll(`${INPUT},${EDIT}`)) dirty.add(field)
-    return { elements: document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT), text: document.createTreeWalker(root, NodeFilter.SHOW_TEXT) }
+    return document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT)
   }
   function mark(node) {
     let el = node.nodeType === 1 || node.nodeType === 11 || node === document ? node : node.parentElement
@@ -306,22 +306,19 @@
     frame = 0
     observer.disconnect()
     if (walker) {
-      // Pure Latin pages need only a cheap text scan, sliced across frames.
+      // Discover roots in the text walk instead of making a second full pass.
       const roots = []
       let node, scanned = 0
       while (walker) {
-        if (walker.elements) {
-          node = walker.elements.nextNode()
-          if (!node) { walker.elements = null; continue }
-          if (node.shadowRoot) {
-            shadowRoots.add(node.shadowRoot)
-            scans.push(scan(node.shadowRoot))
+        node = walker.nextNode()
+        if (!node) { walker = scans.shift() || null; continue }
+        if (node.nodeType === 1) {
+          const root = node.shadowRoot
+          if (root) {
+            shadowRoots.add(root)
+            scans.push(scan(root))
           }
-        } else {
-          node = walker.text.nextNode()
-          if (!node) { walker = scans.shift() || null; continue }
-          if (ARABIC.test(node.data)) roots.push(node.parentElement || node.getRootNode().host)
-        }
+        } else if (ARABIC.test(node.data)) roots.push(node.parentElement || node.getRootNode().host)
         if (++scanned % 128 === 0 && performance.now() - start > 4) break
       }
       apply(roots)
