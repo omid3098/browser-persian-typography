@@ -107,6 +107,24 @@ const { start } = require('./harness.cjs')
       assert.deepEqual(await markup(), before, 'B2 restores the host and inline box exactly')
       await h.setting('setSite', { site: h.base, enabled: true })
     })
+    await check('S10 Persian shadow text wins over inline-box protection', async () => {
+      await h.open('latin')
+      await h.setting('setSite', { site: h.base, enabled: false })
+      await h.page.evaluate(() => {
+        const p = document.body.appendChild(document.createElement('p')); p.id = 'persianBoxLineReview'
+        p.innerHTML = 'نوشته ساختگی <span id="persianBoxReview" style="display:inline-block"></span>'
+        p.lastChild.attachShadow({ mode: 'open' }).append('Sample پیام ساختگی')
+      })
+      const markup = () => h.page.locator('#persianBoxLineReview').evaluate(el => [el.outerHTML, el.lastChild.shadowRoot.innerHTML])
+      const before = await markup()
+      await h.setting('setSite', { site: h.base, enabled: true })
+      assert.equal(await css('persianBoxLineReview', 'direction'), 'rtl')
+      assert.equal(await h.page.locator('#persianBoxReview').getAttribute('dir'), 'rtl')
+      assert.equal(await css('persianBoxReview', 'direction'), 'rtl', 'Protection must not overwrite the host’s RTL decision')
+      await h.setting('setSite', { site: h.base, enabled: false })
+      assert.deepEqual(await markup(), before, 'B2 restores the paragraph, host and root exactly')
+      await h.setting('setSite', { site: h.base, enabled: true })
+    })
     await check('announcements survive disconnected nesting and switching off', async () => {
       await h.setting('setSite', { site: h.base, enabled: false }); await h.settle()
       await h.page.evaluate(() => {

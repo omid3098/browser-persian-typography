@@ -7,8 +7,8 @@ const { start, fonts, pages, work } = require('./harness.cjs')
 pages.mixedResult = '<div id="result"><h2 id="title"><a>عنوان ساختگی</a></h2><div style="display:flex">example.test</div><a id="snippet">Sample این توضیح ساختگی برای آزمون جهت متن است و با یک نام لاتین شروع می‌شود.</a><div>Footer</div></div>'
 pages.citationChip = '<div id="answer" style="display:flow-root">Sample این پاسخ ساختگی است <a id="chip" style="display:inline-block"><img src="/emoji.svg" style="width:16px;height:16px"><span>example.test</span></a><span id="flexChip" style="display:inline-flex"><img src="/emoji.svg" style="width:16px;height:16px">Latin site</span><span id="gridChip" style="display:inline-grid;grid-template-columns:16px auto"><img src="/emoji.svg" style="width:16px;height:16px">Latin grid</span></div>'
 pages.hiddenLogo = '<header><div style="display:flex"><div><h1><a id="logo" style="display:block;font:0 a;width:220px;height:80px;background:navy">نام ساختگی</a></h1><p id="visibleLogo">نام نمایشی ساختگی</p></div></div></header>'
-pages.addressLines = '<div id="addressBlock">https://example.test › lessons › درس-ساختگی-ab123</div><div style="display:flex"><span id="addressRun" dir="ltr">https://example.test <span>› lessons</span><span> › درس-ساختگی-ab123</span></span></div><p id="addressProse">https://example.test این جمله ساختگی است</p>'
-pages.fieldStyles = '<style>textarea,input{font:16px Arial,sans-serif}</style><p>متن ساختگی</p><div style="display:flex"><textarea id="bareTextarea"></textarea><input id="bareInput"><input id="emptyStyle" style=""><input id="authoredStyle" style="color:navy"><input id="changedStyle"></div>'
+pages.addressLines = '<div id="addressBlock">https://example.test › lessons › درس-ساختگی-ab123</div><div style="display:flex"><span id="addressRun" dir="ltr"><span>https://<span>example.test</span></span><span> › lessons › درس-ساختگی-ab123</span></span></div><p id="addressProse">https://example.test این جمله ساختگی است</p>'
+pages.fieldStyles = '<style>textarea,input{font:16px Arial,sans-serif}</style><p>متن ساختگی</p><div dir="rtl" style="display:flex"><textarea id="bareTextarea"></textarea><input id="bareInput"><input id="emptyStyle" style=""><input id="authoredStyle" style="color:navy"><input id="changedStyle"></div>'
 
 ;(async () => {
   const h = await start('real-page-repairs')
@@ -25,10 +25,11 @@ pages.fieldStyles = '<style>textarea,input{font:16px Arial,sans-serif}</style><p
     await setting('setFont', { font: { type: 'bundled' } })
     await test('R6 address breadcrumbs keep page direction', async () => {
       await enable(false); await open('addressLines'); const off = await page.content()
+      const bidi = await page.locator('#addressBlock,#addressRun').evaluateAll(els => els.map(el => getComputedStyle(el).unicodeBidi))
       await enable(true); await settle()
-      for (const selector of ['#addressBlock', '#addressRun']) {
+      for (const [i, selector] of ['#addressBlock', '#addressRun'].entries()) {
         assert.equal(await css(selector, 'direction'), 'ltr', selector)
-        assert.equal(await css(selector, 'unicodeBidi'), 'normal', selector)
+        assert.equal(await css(selector, 'unicodeBidi'), bidi[i], selector)
         assert.equal(await page.locator(selector).evaluate(el => el.style.direction), '')
       }
       assert.equal(await css('#addressProse', 'direction'), 'rtl', 'An address followed by prose is still decided by its text')
@@ -38,8 +39,12 @@ pages.fieldStyles = '<style>textarea,input{font:16px Arial,sans-serif}</style><p
       await enable(false); await open('fieldStyles')
       const styles = () => page.locator('textarea,input').evaluateAll(els => els.map(el => el.getAttribute('style')))
       const before = await styles()
-      await enable(true); await settle()
+      await enable(true); await open('fieldStyles')
       assert((await styles()).every(style => /font-family:.*__PersianTypography/.test(style)), `Fields must actually receive our font: ${JSON.stringify(await styles())}`)
+      await fonts(context, page, '#bareTextarea'); await fonts(context, page, '#bareInput')
+      await page.locator('#bareTextarea').fill('متن تایپ‌شده'); await page.locator('#bareInput').fill('متن تایپ‌شده'); await settle()
+      // Playwright's default caret hiding adds empty style attributes even while off.
+      await page.screenshot({ path: path.join(work, 'shots', 'fixture-field-styles.png'), fullPage: true, caret: 'initial' })
       await page.locator('#changedStyle').evaluate(el => el.style.color = 'red'); await settle()
       await enable(false); await settle()
       assert.deepEqual(await styles(), [...before.slice(0, -1), 'color: red;'], 'Absent, empty and authored styles return; page edits survive')

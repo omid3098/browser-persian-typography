@@ -113,6 +113,8 @@ with its words out of order, in the system's fallback font.
   Inline boxes without Persian (inline-block, inline-flex, inline-grid and
   inline-table) keep their original internal direction when a surrounding text
   block turns RTL, including the order of an icon and a Latin site name.
+  This protection never overrides an RTL decision for the box itself, including
+  a decision from Persian text directly in its open shadow root.
 
 ## Behaviour
 

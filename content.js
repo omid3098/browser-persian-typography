@@ -103,11 +103,11 @@
     }
     return el && !/^(HTML|BODY)$/.test(el.tagName) ? el : null
   }
-  function readable(el, ownItem = false) {
+  function readable(el, ownItem = false, separator = " ") {
     let text = ""
     function read(parent) {
       for (const node of parent.childNodes) {
-        if (node.nodeType === 3) text += node.data + " "
+        if (node.nodeType === 3) text += node.data + separator
         else if (node.nodeType === 1 && !node.matches(SKIP) && !node.matches(EDIT) && !(ownItem && node.matches("ul,ol,table"))) read(node)
       }
     }
@@ -129,10 +129,9 @@
     if (PROSE.test(el.tagName) && ["start", "left"].includes(getComputedStyle(el).textAlign)) prop(el, "text-align", "start")
   }
   function blockDirection(el, ownItem = false) {
-    const text = readable(el, ownItem)
     // Search-result address breadcrumbs are navigation, even with Persian slugs.
-    if (/^\s*(?:https?:\/\/|www\.)[^\s›]+(?:\s*›\s*[^\s›][^›]*)*\s*$/iu.test(text)) return null
-    return dominantDirection(text)
+    if (/^\s*(?:https?:\/\/|www\.)[^\s›]+(?:\s*›\s*[^\s›][^›]*)*\s*$/iu.test(readable(el, ownItem, ""))) return null
+    return dominantDirection(readable(el, ownItem))
   }
   function font(el) {
     if (skipped(el)) return
@@ -262,7 +261,7 @@
       }
     }
     for (const [box, dir] of inlineDirections) {
-      if (getComputedStyle(box).direction !== dir) {
+      if (box.getAttribute("dir") !== "rtl" && getComputedStyle(box).direction !== dir) {
         prop(box, "direction", dir)
         prop(box, "unicode-bidi", "isolate")
       }
