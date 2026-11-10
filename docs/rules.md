@@ -148,20 +148,28 @@ with its words out of order, in the system's fallback font.
   Input events use their original target inside an open root,
   so typing activates its fields too. Hook notification failures never change
   the native attachment's result.
-- **B2. Off means untouched.** With the site switched off, or after it is
-  switched off on an open page, the page is exactly as it was written: every
-  `dir`, style and attribute the extension added is taken back, at once and
-  without a reload. Switching on applies at once too.
+- **B2. Off means untouched.** Font (F1–F6) and direction (D1–D10) can be
+  enabled independently for each site. With font off, the page keeps its own
+  fonts, including in fields and during a font preview. With direction off,
+  the page keeps its own direction, isolation and alignment. Switching either
+  part off takes back every attribute, style and font face that part added,
+  at once and without a reload; the other part keeps working. With both off,
+  the page is exactly as it was written. Switching on applies at once too.
 - **B3. Presentation only.** The extension never rewrites text, sends
   nothing over the network, logs no content and loads no remote code.
-- **B4. Frames.** Frames inside a page follow the switch of the site in the
-  address bar.
+- **B4. Frames.** Frames inside a page follow both parts of the site in the
+  address bar, including frames from another host.
 
 ## Sites and settings
 
-- **S1.** On for every site by default.
-- **S2.** The user switches a site off; the list of switched-off sites and the
-  chosen font live in `storage.local`, on this computer only.
+- **S1.** Font and direction are both on for every site by default. A site
+  may use either part alone, both, or neither.
+- **S2.** Settings live in `storage.local`, on this computer only. The existing
+  `disabledSites` list still means both parts off; old stored sites need no
+  migration or user action. `siteParts` maps only mixed-state hosts to
+  `{ font: boolean, direction: boolean }`. A host in neither store has both on.
+  The chosen font stays in `font`, separate from the site's font enablement.
+  Writes to both site stores run together through the background's queue.
 - **S3.** A site is the host name of the page in the address bar without a
   leading `www.`; subdomains are separate sites.
 - **S4.** Every open tab of a site follows a change at once.
@@ -192,7 +200,7 @@ result over a budget is a failure, not a cost to weigh.
 ## Interface
 
 The toolbar opens the chosen **B · پنجرهٔ آروم** popup. Its icon is coloured
-when the current site is on and grey when it is off.
+when at least one part is on and grey when both are off.
 
 - **Window edge.** Chrome draws the toolbar popup's window itself: square
   corners and a 1 px frame that a page cannot round. So the popup's bands and
@@ -209,6 +217,8 @@ when the current site is on and grey when it is off.
   switch already shows this one), so switching a site off does not resize the
   window. On browser internal pages and extension stores the site block is
   hidden.
+  The existing single switch shows on when either part is on. It turns both
+  parts off or both on; independent controls are not yet in this popup.
 - **Font view.** Search the bundled Vazirmatn and installed fonts from
   `chrome.fontSettings`; only fonts able to draw Persian are listed. Names
   use the popup font; only «نمونه» uses the row's font. Pointer hover or
