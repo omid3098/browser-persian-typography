@@ -78,6 +78,9 @@ with its words out of order, in the system's fallback font.
   kept. No other element gets an alignment from us: short labels in a toolbar,
   a menu or a sidebar keep the place the page gave them. This is the T3 rule
   for labels.
+  A read-only Draft.js block (`public-DraftStyleDefault-block`) also counts as
+  prose when D3 turns it RTL. Its `start`, or `left` on an LTR page, becomes
+  `start`; `center`, `right` and `justify` stay. Editable inner blocks are skipped.
 - **D5. Latin-only blocks are left alone,** with one exception: inside a list,
   table or quote that this extension turned RTL, every Latin-only text block gets
   `dir="ltr"`. Differs from T3, which also sets `ltr` on every Latin-only
@@ -92,6 +95,12 @@ with its words out of order, in the system's fallback font.
   cells are never turned. Differs from T3, where every list and table of a chat
   is prose: on the web one Persian file name in an English table would mirror
   the table.
+  In a list turned RTL, an item's absolutely positioned `::before` counter
+  marker at its static position has a negative left margin mirrored to the
+  right, using the page's value. Item and list boxes stay unchanged. Resolved
+  offsets are tested against the static position; markers pinned elsewhere
+  are skipped. A pinned marker exactly at that position cannot be distinguished
+  and gets the same margin repair.
 - **D7. A direction the page wrote.** `dir="rtl"` on an element is kept.
   `dir="auto"` and `dir="ltr"` on a text block, or on an inline wrapper around
   its text, are replaced when D1 says `rtl`: these two are the disease on the
@@ -258,3 +267,6 @@ that replaces or bypasses the document-start `attachShadow` hook can hide roots;
 there is no fallback element scan. A shadow wrapper with an explicit LTR direction
 can keep slotted Persian text LTR; slot assignment is not inspected. Firefox and
 mobile browsers are not in the first version.
+An English sentence without its own element in Persian prose (e.g. «متن فارسی Sample birds can fly. ادامه»)
+follows browser bidi rules: wrapping can split it and move its final full stop, also without the extension.
+Repairing that would require text-node changes, which the extension never makes.

@@ -12,6 +12,9 @@ pages.addressBreaks = '<p id="breakBlock">https://example.test<br>ممنون</p>
 pages.fieldStyles = '<style>textarea,input{font:16px Arial,sans-serif}</style><p>متن ساختگی</p><div dir="rtl" style="display:flex"><textarea id="bareTextarea"></textarea><input id="bareInput"><input id="emptyStyle" style=""><input id="authoredStyle" style="color:navy"><input id="changedStyle"></div>'
 pages.svgSpacing = '<style>html{direction:rtl}svg{display:block;width:16px;height:16px;margin-inline-end:8px}button{display:inline-flex}button>span{display:block}</style><article><div dir="rtl">متن ساختگی <button><svg viewBox="0 0 16 16"><path d="M0 0h16v16H0z"/></svg><span><span id="svgLabel">برچسب ساختگی</span></span></button></div></article>'
 pages.svgTurn = pages.svgSpacing.replace('html{direction:rtl}', '').replace('dir="rtl"', 'id="svgBlock"')
+const draftBlock = (id, align = 'left') => `<div id="${id}" class="public-DraftStyleDefault-block public-DraftStyleDefault-ltr" style="text-align:${align}"><span>Sample این نوشته ساختگی برای بررسی چیدمان یک بند فارسی است.</span></div>`
+pages.draftAlignment = `<style>.public-DraftStyleDefault-ltr{direction:ltr;text-align:left}</style><article style="width:300px">${['left', 'start', 'center', 'right', 'justify'].map(align => draftBlock('draft-' + align, align)).join('')}<div id="plainDiv" style="text-align:left">Sample متن ساختگی</div></article>`
+pages.draftMarkers = `<style>ul{padding-left:0}li{display:block;margin-left:30px}li::before{content:counter(item,disc);position:absolute;margin-left:-30px;font-size:23px}#pinned::before{left:8px}#narrow{margin-left:36px}#narrow::before{margin-left:-36px}</style><ul style="width:400px"><li id="marker">${draftBlock('markerText')}</li><li id="narrow">${draftBlock('narrowText')}</li><li id="pinned">${draftBlock('pinnedText')}</li></ul>`
 
 ;(async () => {
   const h = await start('real-page-repairs')
@@ -26,6 +29,36 @@ pages.svgTurn = pages.svgSpacing.replace('html{direction:rtl}', '').replace('dir
   const css = (selector, key) => page.locator(selector).evaluate((el, key) => getComputedStyle(el)[key], key)
   try {
     await setting('setFont', { font: { type: 'bundled' } })
+    await test('D4 read-only Draft blocks use prose alignment only at the plain default', async () => {
+      await enable(false); await open('draftAlignment'); const off = await page.content()
+      await enable(true); await settle()
+      for (const align of ['left', 'start', 'center', 'right', 'justify']) {
+        assert.equal(await css('#draft-' + align, 'direction'), 'rtl')
+        assert.equal(await css('#draft-' + align, 'textAlign'), ['left', 'start'].includes(align) ? 'start' : align)
+      }
+      assert.equal(await css('#plainDiv', 'textAlign'), 'left', 'Ordinary divs keep their alignment')
+      await enable(false); await settle(); assert.equal(await page.content(), off)
+    })
+    await test('D6 static custom list markers mirror the page margin; pinned markers stay put', async () => {
+      await enable(false); await open('draftMarkers'); const off = await page.content()
+      const sheetCount = await page.evaluate(() => document.adoptedStyleSheets.length)
+      const markers = () => page.locator('li').evaluateAll(els => els.map(el => {
+        const c = getComputedStyle(el, '::before')
+        return { left: c.left, ml: c.marginLeft, mr: c.marginRight }
+      }))
+      const before = await markers()
+      await enable(true); await settle()
+      assert.equal(await css('ul', 'direction'), 'rtl')
+      const after = await markers()
+      assert.deepEqual(after.map(({ ml, mr }) => [ml, mr]), [['0px', '-30px'], ['0px', '-36px'], ['-30px', '0px']])
+      assert.equal(after[2].left, before[2].left, 'An explicitly left-pinned pseudo-element is not moved')
+      assert.equal(await css('#marker', 'marginLeft'), '30px', 'Item boxes keep their margins')
+      assert.equal(await css('#narrow', 'marginLeft'), '36px')
+      await setting('setSitePart', { site: h.base, part: 'direction', enabled: false })
+      assert.deepEqual(await markers(), before, 'Turning direction off restores the pseudo styles')
+      assert.equal(await page.evaluate(() => document.adoptedStyleSheets.length), sheetCount, 'Marker stylesheets are removed too')
+      await enable(false); await settle(); assert.equal(await page.content(), off)
+    })
     await test('R9 SVG keeps its original direction and RTL icon gap', async () => {
       await enable(false); await open('svgSpacing'); const off = await page.content()
       const gap = () => page.locator('button').evaluate(el => {

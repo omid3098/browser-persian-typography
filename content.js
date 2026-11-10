@@ -11,6 +11,7 @@
   const EDIT = '[contenteditable]:not([contenteditable="false"])'
   const RANGES = 'U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC'
   const originals = new Map()
+  let markerId = 0
   const dirty = new Set()
   const shadowRoots = new Set()
   const announcedHosts = new Set()
@@ -50,6 +51,10 @@
   function restore(el) {
     const saved = originals.get(el)
     if (!saved) return
+    if (saved.marker) {
+      const { root, sheet } = saved.marker
+      root.adoptedStyleSheets = root.adoptedStyleSheets.filter(value => value !== sheet)
+    }
     for (const [name, value] of saved.attrs) {
       if (el.getAttribute(name) === value.after) {
         if (value.before === null) el.removeAttribute(name)
@@ -127,7 +132,36 @@
     // Author CSS (including !important rules) must not defeat a block's dir.
     prop(el, "direction", el.getAttribute("dir") === "rtl" ? "rtl" : dir)
     prop(el, "unicode-bidi", "isolate")
-    if (PROSE.test(el.tagName) && ["start", "left"].includes(getComputedStyle(el).textAlign)) prop(el, "text-align", "start")
+    const prose = PROSE.test(el.tagName)
+    const draft = dir === "rtl" && el.classList.contains("public-DraftStyleDefault-block") && !editable(el)
+    if (prose || draft) {
+      const align = getComputedStyle(el).textAlign
+      if (align === "start" || (align === "left" && (prose || getComputedStyle(document.documentElement).direction === "ltr"))) prop(el, "text-align", "start")
+    }
+  }
+  function mirrorMarker(item) {
+    if (skipped(item) || editable(item)) return
+    const css = getComputedStyle(item, "::before")
+    if (css.position !== "absolute" || !/^counter\(/.test(css.content) || !(parseFloat(css.marginLeft) < 0)) return
+    const left = css.left, right = css.right, margin = css.marginLeft
+    const root = item.getRootNode(), sheet = new CSSStyleSheet()
+    const name = "data-persian-typography-marker", previous = item.getAttribute(name), id = String(++markerId)
+    const selector = `[${name}="${id}"]::before`
+    item.setAttribute(name, id)
+    root.adoptedStyleSheets = [...root.adoptedStyleSheets, sheet]
+    // Computed offsets are used pixels even for auto; test the static position.
+    sheet.replaceSync(`${selector}{left:auto!important;right:auto!important}`)
+    const atStaticPosition = getComputedStyle(item, "::before")
+    const matches = atStaticPosition.left === left && atStaticPosition.right === right
+    if (previous === null) item.removeAttribute(name)
+    else item.setAttribute(name, previous)
+    if (!matches) {
+      root.adoptedStyleSheets = root.adoptedStyleSheets.filter(value => value !== sheet)
+      return
+    }
+    sheet.replaceSync(`${selector}{margin-left:0!important;margin-right:${margin}!important}`)
+    attr(item, name, id)
+    remember(item).marker = { root, sheet }
   }
   function blockDirection(el, ownItem = false) {
     // Search-result address breadcrumbs are navigation, even with Persian slugs.
@@ -246,6 +280,11 @@
         if (directions.filter(dir => dir === "rtl").length <= directions.length / 2) continue
       } else if (blockDirection(group) !== "rtl") continue
       direction(group, "rtl")
+      if (group.matches("ul,ol")) {
+        for (const item of group.querySelectorAll("li")) {
+          if (item.closest("ul,ol") === group) mirrorMarker(item)
+        }
+      }
       turned.add(group)
       for (const item of group.querySelectorAll("*")) {
         if (!skipped(item) && !editable(item) && blockFor(item) === item && textBlock(item)) blocks.add(item)
