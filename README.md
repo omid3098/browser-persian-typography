@@ -5,7 +5,7 @@ A Manifest V3 extension for Chromium. It gives Persian text on web pages the Vaz
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/demo-posts.png" width="830" alt="Persian social posts that start with a Latin word and contain emoji, shown before and after the extension. Before, the posts are laid out left to right. After, they read right to left in Vazirmatn.">
+  <img src="docs/screenshots/demo-posts.png" width="640" alt="Persian social posts that start with a Latin word and contain emoji, shown before and after the extension. Before, the posts are laid out left to right. After, they read right to left in Vazirmatn.">
   <br>
   <em>Persian posts that start with a Latin word and contain emoji, before and after.</em>
 </p>
@@ -23,7 +23,7 @@ A Manifest V3 extension for Chromium. It gives Persian text on web pages the Vaz
 This chat keeps its text in open shadow roots. The picture shows its messages and the message box while typing, before and after. Each message follows its own text, and the box turns right to left once it holds Persian.
 
 <p align="center">
-  <img src="docs/screenshots/demo-chat.png" width="830" alt="A chat inside open shadow roots, with messages and a message box that holds text being typed, shown before and after the extension.">
+  <img src="docs/screenshots/demo-chat.png" width="640" alt="A chat inside open shadow roots, with messages and a message box that holds text being typed, shown before and after the extension.">
   <br>
   <em>A chat inside open shadow roots, before and after.</em>
 </p>
@@ -39,7 +39,7 @@ Click the toolbar icon to open the popup. Its switch turns the whole site off (t
 | **فقط فونت** | The font only. The site keeps its own direction. |
 
 <p align="center">
-  <img src="docs/screenshots/popup-site-control.png" width="830" alt="The extension popup. It shows the switch for the current site and, under it, a row with three parts: فونت و جهت, فقط جهت and فقط فونت.">
+  <img src="docs/screenshots/popup-site-control.png" width="1008" alt="The extension popup in its three states: font and direction, direction only, and font only. It shows the switch for the current site and, under it, a row with three parts: فونت و جهت, فقط جهت and فقط فونت.">
   <br>
   <em>The popup: the site switch and, under it, the row with three parts.</em>
 </p>
@@ -81,19 +81,19 @@ Editing source files does not change the loaded copy. After an update, run `npm 
 These pages show where the extension stops, or where it does something you may not expect.
 
 <p align="center">
-  <img src="docs/screenshots/limit-site-name.png" width="830" alt="A search results page. A site's Persian name has moved to the right end of its line, away from the site's icon.">
+  <img src="docs/screenshots/limit-site-name.png" width="400" alt="A search result without the extension and with it. With the extension, a site's Persian name has moved to the right end of its line, away from the site's icon.">
   <br>
   <em>On a search results page, a site's Persian name moves to the right end of its line, away from the site's icon.</em>
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/limit-inline-snippet.png" width="830" alt="A search result with a Persian snippet. The words are in the right order, but the snippet starts at the left edge of its line.">
+  <img src="docs/screenshots/limit-inline-snippet.png" width="610" alt="A search result with a Persian snippet, without the extension and with it. With the extension, the words are in the right order, but the snippet starts at the left edge of its line.">
   <br>
   <em>A search result's snippet reads in the right order but starts at the left edge.</em>
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/limit-wikipedia-references.png" width="830" alt="A reference list on Persian Wikipedia. An English entry that contains Persian digits is right-aligned with its number on the right. A purely English entry stays as it is.">
+  <img src="docs/screenshots/limit-wikipedia-references.png" width="459" alt="A reference list on Persian Wikipedia, without the extension and with it. With the extension, an English entry that contains Persian digits is right-aligned with its number on the right. A purely English entry stays as it is.">
   <br>
   <em>In Persian Wikipedia's reference lists, an English entry that contains Persian digits becomes right-aligned with its number on the right. A purely English entry stays as it is.</em>
   <br>
@@ -101,8 +101,6 @@ These pages show where the extension stops, or where it does something you may n
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/limit-closed-shadow-root.png" width="830" alt="The same Persian card twice. In an open shadow root it is repaired. In a closed shadow root it is out of reach and stays as the page wrote it.">
-  <br>
   <em>The same Persian card in an open shadow root (repaired) and in a closed one (out of reach).</em>
 </p>
 
