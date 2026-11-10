@@ -158,6 +158,9 @@ when the current site is on and grey when it is off.
   corners and a 1 px frame that a page cannot round. So the popup's bands and
   rows run flush to the edge and no rounded shape touches it; only controls
   inside (switch, search field, buttons) are rounded.
+- **Scrolling lists.** The font list and the sites list scroll with a thin,
+  quiet thumb and no arrow buttons, in light and dark. The keyboard focus ring
+  of the switch sits outside it, so it stays visible on the filled track.
 - **Main view.** The current host, its on/off switch and its state in words
   come first, in a band flush to the top edge. A host name too long for 20 px
   takes the full width and breaks after dots and hyphens; the state and switch

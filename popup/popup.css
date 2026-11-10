@@ -15,7 +15,14 @@
 *{box-sizing:border-box;margin:0;padding:0}
 [hidden]{display:none !important}
 html{background:var(--surf)}
-body{width:320px;background:var(--surf);color:var(--ink);font:400 16px/1.5 "Vazirmatn","Segoe UI",sans-serif;scrollbar-width:thin}
+body{width:320px;background:var(--surf);color:var(--ink);font:400 16px/1.5 "Vazirmatn","Segoe UI",sans-serif}
+/* scrollbars: a thin quiet thumb, no arrow buttons (scrollbar-width would bring the arrows back) */
+::-webkit-scrollbar{width:10px;height:10px;background:transparent}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-button{display:none;width:0;height:0}
+::-webkit-scrollbar-corner{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--line2);background-clip:padding-box;border:3px solid transparent;border-radius:5px;min-height:32px}
+::-webkit-scrollbar-thumb:hover{background:var(--ink3);background-clip:padding-box}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;text-align:start}
 ul{list-style:none}
 svg{display:block;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
@@ -31,6 +38,7 @@ svg{display:block;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;stro
 .sw{width:52px;height:32px;border-radius:16px;background:var(--line2);position:relative;flex:none}
 .sw i{position:absolute;top:4px;inset-inline-start:4px;width:24px;height:24px;border-radius:12px;background:var(--surf)}
 .sw[aria-checked="true"]{background:var(--ink)}
+.sw:focus-visible{outline-offset:2px} /* the ring sits outside: inside, it would vanish on the filled track */
 .sw[aria-checked="true"] i{inset-inline-start:24px}
 
 /* main view */
@@ -64,7 +72,7 @@ svg{display:block;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;stro
 .search svg{width:20px;height:20px}
 .search input{flex:1;min-width:0;height:100%;border:0;outline:0;background:none;font:inherit;color:var(--ink)}
 .search input::placeholder{color:var(--ink3);opacity:1}
-.flist{position:relative;flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:var(--line2) transparent}
+.flist{position:relative;flex:1;min-height:0;overflow-y:auto;overflow-x:hidden}
 .flist li{content-visibility:auto;contain-intrinsic-size:auto 48px}
 .frow{width:100%;min-height:48px;padding:8px 16px;display:flex;align-items:center;gap:8px}
 .frow:hover,.frow.pointed{background:var(--point)}
@@ -77,7 +85,7 @@ svg{display:block;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;stro
 .none{padding:16px;color:var(--ink3)}
 
 /* sites view */
-.sites{max-height:368px;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:var(--line2) transparent}
+.sites{max-height:368px;overflow-y:auto;overflow-x:hidden}
 .srow{min-height:56px;padding:8px 16px;display:flex;align-items:center;gap:8px}
 .srow .host{flex:1;min-width:0;font-size:16px;overflow-wrap:anywhere}
 .btn{height:32px;padding:0 12px;border-radius:16px;background:var(--bg2);font-size:14px;font-weight:500;white-space:nowrap}
