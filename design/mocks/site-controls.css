@@ -1,0 +1,67 @@
+/* Per-site controls: font and direction rules for one site.
+   The popup itself is drawn by the built ../../popup/popup.css (loaded first); this file adds only the new
+   parts and the page around the popup. */
+
+:root{--stage:#e9ebee}
+@media (prefers-color-scheme:dark){:root{--stage:#0a0a0b}}
+
+/* the page around the popup: Chrome's own square window with a 1 px frame */
+html{background:var(--stage)}
+body{width:auto;background:var(--stage);padding:32px;display:flex;flex-direction:column;align-items:center;gap:24px}
+.frame{width:322px;border:1px solid var(--line2);background:var(--surf)}
+body.bare{padding:0;background:var(--surf)}
+body.bare .frame{border:0;width:320px}
+
+/* a small switch, same look as the site switch */
+.sw.s{width:40px;height:24px;border-radius:12px}
+.sw.s i{top:4px;width:16px;height:16px;border-radius:8px}
+.sw.s[aria-checked="true"] i{inset-inline-start:20px}
+
+.parts{padding:8px 16px 0}
+
+/* A: two small switches in one row */
+.parts.a{display:flex;gap:16px}
+.pt{flex:1;min-width:0;display:flex;align-items:center;gap:8px;min-height:48px}
+.pt .k{font-size:14px;color:var(--ink2)}
+
+/* B: one selector with three parts */
+.parts.b{padding:12px 16px 4px}
+.seg{display:flex;gap:4px;padding:4px;background:var(--bg2);border-radius:12px}
+.seg button{flex:1;min-width:0;height:32px;border-radius:8px;text-align:center;font-size:14px;font-weight:500;color:var(--ink3);white-space:nowrap}
+.seg button:hover{color:var(--ink)}
+.seg button[aria-checked="true"]{background:var(--surf);color:var(--ink);font-weight:600;box-shadow:inset 0 0 0 1px var(--line2)}
+
+/* C: the state word in the band opens the three choices */
+.state.c{display:flex;align-items:center;height:24px}
+.st{display:inline-flex;align-items:center;gap:4px;height:24px;position:relative;border-radius:8px;color:var(--ink3)}
+.st::before{content:"";position:absolute;inset:-8px -8px}
+.st:hover{color:var(--ink)}
+.st svg{width:16px;height:16px}
+.opts{padding:8px 0 0}
+.opts .frow .nm{font-size:16px}
+
+/* the sites list: a site with one part off names the part */
+.srow .who{flex:1;min-width:0}
+.srow .who .host{display:block}
+.srow .sub{font-size:14px;line-height:20px;color:var(--ink3)}
+
+/* the compare page */
+body.cmp{align-items:flex-start;padding:32px;width:740px}
+.cmp #app{display:flex;flex-direction:column;gap:32px}
+.cmp .row{display:flex;flex-direction:column;gap:12px}
+.cmp .head{display:flex;align-items:center;gap:12px}
+.cmp .letter{width:40px;height:40px;border-radius:20px;background:var(--ink);color:var(--surf);display:flex;align-items:center;justify-content:center;font:700 20px/1 "Segoe UI",sans-serif}
+.cmp .head b{font-size:18px;font-weight:700}
+.cmp .pair{display:flex;gap:32px;align-items:flex-start}
+.cmp .cap{font-size:14px;color:var(--ink3);margin-bottom:8px}
+.cmp .tall{font-size:14px;color:var(--ink3)}
+
+/* index */
+.idx{width:100%;max-width:720px;display:flex;flex-direction:column;gap:32px}
+.idx h2{font-size:24px;font-weight:700;margin-bottom:8px}
+.idx p{color:var(--ink2);margin-bottom:8px}
+.idx ul{display:flex;flex-direction:column;gap:4px}
+.idx li{display:flex;align-items:center;gap:16px;border-top:1px solid var(--line);padding-top:4px}
+.idx a{color:var(--ink);text-decoration:none;font-weight:500}
+.idx a:hover{text-decoration:underline}
+.idx .id{direction:ltr;unicode-bidi:isolate;color:var(--ink3);font-size:14px}
