@@ -1,4 +1,4 @@
-import { siteKey, handleSettings } from "./settings.js"
+import { siteKey, sitePartsFor, handleSettings } from "./settings.js"
 import { findPersianFonts } from "./popup/font-list.js"
 
 let fontWarmup
@@ -17,8 +17,9 @@ chrome.runtime.onStartup.addListener(() => { warmFonts().catch(() => {}) })
 
 async function state(tab) {
   const site = siteKey(tab.url)
-  const { disabledSites = [], font = { type: "bundled" } } = await chrome.storage.local.get(["disabledSites", "font"])
-  return { site, enabled: !disabledSites.includes(site), font }
+  const stored = await chrome.storage.local.get(["disabledSites", "siteParts", "font"])
+  const parts = sitePartsFor(site, stored)
+  return { site, enabled: parts.font || parts.direction, parts, font: stored.font || { type: "bundled" } }
 }
 async function icon(tab) {
   if (!tab.id || !/^https?:/.test(tab.url || "")) return
@@ -37,5 +38,5 @@ chrome.tabs.onUpdated.addListener((_id, change, tab) => {
   if (change.url || change.status === "complete") icon(tab).catch(() => {})
 })
 chrome.storage.onChanged.addListener(async (changes, area) => {
-  if (area === "local" && changes.disabledSites) for (const tab of await chrome.tabs.query({})) icon(tab).catch(() => {})
+  if (area === "local" && (changes.disabledSites || changes.siteParts)) for (const tab of await chrome.tabs.query({})) icon(tab).catch(() => {})
 })

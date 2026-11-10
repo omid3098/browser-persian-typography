@@ -25,7 +25,7 @@
   // Read-only diagnostics live in the isolated extension world, never in the page.
   const metrics = { total: 0, longest: 0, flushes: 0 }
   Object.defineProperty(metrics, "idle", { enumerable: true, get: () => Boolean(config) && !frame && !walker && !pendingFonts && !pendingStates })
-  Object.defineProperty(metrics, "state", { enumerable: true, get: () => config && ({ enabled: config.enabled, font: config.font }) })
+  Object.defineProperty(metrics, "state", { enumerable: true, get: () => config && ({ enabled: config.enabled, parts: config.parts, font: config.font }) })
   globalThis.__persianTypographyMetrics = metrics
 
   function remember(el) {
@@ -135,7 +135,7 @@
     return dominantDirection(readable(el, ownItem))
   }
   function font(el) {
-    if (skipped(el)) return
+    if (!config.parts.font || skipped(el)) return
     const css = getComputedStyle(el)
     // Image-replacement logos hide their text at zero size; no font is drawn.
     if (parseFloat(css.fontSize) === 0) return
@@ -163,7 +163,7 @@
         Promise.resolve(source).then(data => {
           const face = new FontFace(family, data, overrides)
           faces.push(face)
-          if (config.enabled && fontProfiles.get(original) === profile) document.fonts.add(face)
+          if (config.parts.font && fontProfiles.get(original) === profile) document.fonts.add(face)
           return face.load().then(() => {
             // Keep ink whole when the replacement cannot fit the original measures.
             fontCanvas.font = `${css.fontStyle} ${css.fontWeight} ${css.fontSize} ${JSON.stringify(family)}`
@@ -192,7 +192,8 @@
       pageHasPersian = true
       const editor = editable(el)
       if (editor) { fields.add(editor); return }
-      holders.add(el)
+      if (config.parts.font) holders.add(el)
+      if (!config.parts.direction) return
       const block = node.parentElement ? blockFor(el) : node.parentNode
       if (block && textBlock(block)) blocks.add(block)
       for (let inline = node.parentElement; inline && inline !== block; inline = inline.parentElement) {
@@ -274,9 +275,11 @@
     for (const el of fields) {
       if (closestAcrossRoots(el, SKIP)) continue
       if (!pageHasPersian && !ARABIC.test(el.value || el.textContent)) continue
-      if (el.matches(INPUT)) {
-        if (!el.hasAttribute("dir") && getComputedStyle(el).direction !== "rtl") attr(el, "dir", "auto")
-      } else if (!skipped(el)) direction(el, dominantDirection(el.textContent) || "auto")
+      if (config.parts.direction) {
+        if (el.matches(INPUT)) {
+          if (!el.hasAttribute("dir") && getComputedStyle(el).direction !== "rtl") attr(el, "dir", "auto")
+        } else if (!skipped(el)) direction(el, dominantDirection(el.textContent) || "auto")
+      }
       font(el)
     }
   }
@@ -388,7 +391,7 @@
     const time = performance.now() - start
     metrics.total += time; metrics.longest = Math.max(metrics.longest, time)
   }
-  chrome.storage.onChanged.addListener((changes, area) => { if (area === "local" && (changes.disabledSites || changes.font)) update() })
+  chrome.storage.onChanged.addListener((changes, area) => { if (area === "local" && (changes.disabledSites || changes.siteParts || changes.font)) update() })
   chrome.runtime.onConnect.addListener(port => {
     if (port.name !== "preview" || port.sender?.id !== chrome.runtime.id) return
     previewPort = port

@@ -18,8 +18,9 @@ Content Security Policy. Settings stay in `storage.local` on this computer.
 4. Reload an existing web tab once. Open a page with Persian text; it should
    use Vazirmatn and read from right to left block by block.
 5. Pin **Persian Typography** from the extensions menu. Click its toolbar icon
-   to open the popup. Its switch turns the current site off (grey icon) or on
-   (coloured icon). Existing tabs and
+   to open the popup. Its switch turns both font and direction off (grey icon)
+   or on (coloured icon). The icon stays coloured when either part is on.
+   Existing tabs and
    embedded frames follow immediately, without another reload. With it off,
    the engine restores the page's attributes and styles.
 
@@ -52,10 +53,13 @@ textarea that uses its browser's default monospace font.
 An extension page can import `settings.js`. It exports:
 
 ```js
-import { readSite, setSite, switchSite, readFont, setFont, subscribe } from './settings.js'
+import { readSite, readSiteParts, setSitePart, setSite, switchSite, readFont, setFont, subscribe } from './settings.js'
 await readSite('https://www.example.com') // true by default
-await setSite('example.com', false)
-await switchSite('example.com')
+await readSiteParts('example.com') // { font: true, direction: true }
+await setSitePart('example.com', 'font', false) // direction only
+await setSitePart('example.com', 'direction', false) // both off
+await setSite('example.com', true) // both on
+await switchSite('example.com') // both off if either was on; otherwise both on
 await setFont({ type: 'bundled' })
 await setFont({ type: 'system', family: 'Tahoma' })
 const font = await readFont()
@@ -66,6 +70,16 @@ Only the hostname is stored. `www.` is removed; other subdomains are separate
 sites. All writes go through the background worker's queue. A missing system
 font falls back to the bundled Vazirmatn. Changes are delivered to open tabs
 through the browser's storage change event.
+
+`readSiteParts` returns the two booleans. `setSitePart(site, 'font' | 'direction',
+enabled)` changes just that part and returns both. These functions are ready for
+independent controls; the current popup keeps its one switch and its look.
+`readSite` reports whether either part is on. The old `disabledSites` list still
+stores hosts with both off. Only mixed states are stored in `siteParts`, keyed
+by hostname; every other host has both on. Existing settings need no migration.
+For example, khabaronline.ir can keep its own font while applying direction rules.
+Switching either part off restores its writes immediately in open tabs, fields,
+shadow roots and frames. Font previews respect the site's font enablement too.
 
 ## Checks (PowerShell, Windows)
 

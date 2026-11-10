@@ -62,14 +62,15 @@ async function start(name, { extension = true } = {}) {
     const result = await control.evaluate(async ({ operation, args }) => {
       const api = await import(chrome.runtime.getURL("settings.js"))
       if (operation === "setSite") return api.setSite(args.site, args.enabled)
+      if (operation === "setSitePart") return api.setSitePart(args.site, args.part, args.enabled)
       if (operation === "setFont") return api.setFont(args.font)
       return api[operation](args.site)
     }, { operation, args })
-    if (["setSite", "switchSite", "setFont"].includes(operation)) {
+    if (["setSite", "setSitePart", "switchSite", "setFont"].includes(operation)) {
       for (const p of context.pages().filter(p => /^https?:/.test(p.url()))) {
-        const expected = operation === "setFont" ? { font: result } : { enabled: await control.evaluate(async url => {
+        const expected = operation === "setFont" ? { font: result } : { parts: await control.evaluate(async url => {
           const api = await import(chrome.runtime.getURL("settings.js"))
-          return api.readSite(url)
+          return api.readSiteParts(url)
         }, p.url()) }
         await settle(p, expected)
       }
@@ -94,6 +95,7 @@ async function start(name, { extension = true } = {}) {
           const metrics = globalThis.__persianTypographyMetrics, state = metrics?.state
           if (++n > 600) return reject(new Error('Engine did not become idle: ' + JSON.stringify({ expected, metrics })))
           const matches = (!('enabled' in expected) || state?.enabled === expected.enabled) &&
+            (!expected.parts || (state?.parts?.font === expected.parts.font && state?.parts?.direction === expected.parts.direction)) &&
             (!expected.font || (state?.font?.type === expected.font.type && state?.font?.family === expected.font.family))
           if (metrics?.idle && n > 3 && matches) resolve()
           else requestAnimationFrame(check)
