@@ -30,30 +30,44 @@ const { start } = require('./harness.cjs')
       await h.settle()
       assert.equal(await css('directReview', 'direction'), 'ltr', 'root child replacements restore the host')
     })
-    await check('S2 assigned text and block boundaries', async () => {
-      await h.page.evaluate(() => {
-        for (const [id, html] of [['slotText', 'Sample متن فارسی'], ['slotInline', '<span>Sample متن فارسی</span>'], ['slotBlocks', '<p>Sample متن فارسی</p><p>English only</p>']]) {
-          const host = document.body.appendChild(document.createElement('div')); host.id = id; host.innerHTML = html
-          host.attachShadow({ mode: 'open' }).innerHTML = '<slot></slot>'
-        }
-      }); await h.settle()
-      for (const id of ['slotText', 'slotInline']) assert.equal(await css(id, 'direction'), 'rtl', id)
-      assert.equal(await h.page.locator('#slotBlocks').getAttribute('dir'), null, 'block host must not mirror its block children')
-    })
-    await check('S2 wrapped slot turns its text block and restores exactly', async () => {
+    for (const [name, light, shadow, lineBlock] of [
+      ['1 direct slot', 'متن فارسی', '<slot></slot>', 'slotHostReview'],
+      ['2 wrapped slot', 'Sample متن فارسی', '<p id="slotParagraphReview"><slot></slot></p>', 'slotParagraphReview'],
+      ['3 nested light text', '<span><b>Sample متن فارسی</b></span>', '<p id="slotParagraphReview"><slot></slot></p>', 'slotParagraphReview'],
+      ['4 light text becomes Latin', '<span id="slotSpanReview">متن فارسی</span>', '<p id="slotParagraphReview"><slot></slot></p>', 'slotParagraphReview'],
+      ['5 light inline box', 'متن فارسی <a id="slotLinkReview" style="display:inline-flex"><b>+</b>Latin site</a>', '<slot></slot>', 'slotHostReview']
+    ]) await check('separate trees: ' + name, async () => {
+      await h.open('latin')
       await h.setting('setSite', { site: h.base, enabled: false })
-      await h.page.evaluate(() => {
-        const host = document.body.appendChild(document.createElement('div')); host.id = 'wrappedSlotReview'
-        host.textContent = 'Demo نوشته آزمایشی'
-        host.attachShadow({ mode: 'open' }).innerHTML = '<p id="wrappedSlotParagraphReview"><slot></slot></p>'
-      })
-      const markup = () => h.page.locator('#wrappedSlotReview').evaluate(el => [el.outerHTML, el.shadowRoot.innerHTML])
+      await h.page.evaluate(({ light, shadow }) => {
+        for (const field of document.querySelectorAll('input,textarea')) field.remove()
+        const host = document.body.appendChild(document.createElement('div')); host.id = 'slotHostReview'
+        host.innerHTML = light
+        host.attachShadow({ mode: 'open' }).innerHTML = shadow
+      }, { light, shadow })
+      const markup = () => h.page.evaluate(() => [document.body.innerHTML, document.querySelector('#slotHostReview').shadowRoot.innerHTML])
       const before = await markup()
       await h.setting('setSite', { site: h.base, enabled: true })
-      assert.equal(await css('wrappedSlotParagraphReview', 'direction'), 'rtl')
-      assert.equal(await h.page.locator('#wrappedSlotReview').getAttribute('dir'), null, 'host with a block child must not turn')
+      assert.equal(await css(lineBlock, 'direction'), 'rtl', 'the element laying out the text as lines must turn')
+      assert.equal(await h.page.locator('#slotHostReview').getAttribute('dir'), 'rtl', 'light text decides its host')
+      if (await h.page.locator('#slotParagraphReview').count()) assert.equal(await h.page.locator('#slotParagraphReview').getAttribute('dir'), null, 'slot wrapper only inherits')
+      if (name.startsWith('4 ')) {
+        await h.page.locator('#slotSpanReview').evaluate(el => { el.firstChild.data = 'English only' }); await h.settle()
+        assert.equal(await h.page.evaluate(() => {
+          const host = document.querySelector('#slotHostReview')
+          return [...document.querySelectorAll('*'), ...host.shadowRoot.querySelectorAll('*')].some(el => getComputedStyle(el).direction === 'rtl')
+        }), false, 'no stale RTL in either tree')
+        assert.deepEqual(await markup(), before.map(html => html.replace('متن فارسی', 'English only')), 'Latin edit leaves no extension markup')
+      }
+      if (name.startsWith('5 ')) {
+        assert.equal(await css('slotLinkReview', 'direction'), 'ltr')
+        assert.equal(await h.page.locator('#slotLinkReview').evaluate(el => {
+          const text = document.createRange(); text.selectNode(el.lastChild)
+          return el.firstChild.getBoundingClientRect().right <= text.getBoundingClientRect().left
+        }), true, 'icon stays before the Latin label')
+      }
       await h.setting('setSite', { site: h.base, enabled: false })
-      assert.deepEqual(await markup(), before, 'B2 restores light and shadow markup exactly')
+      assert.deepEqual(await markup(), name.startsWith('4 ') ? before.map(html => html.replace('متن فارسی', 'English only')) : before, 'B2 restores light and shadow markup exactly')
       await h.setting('setSite', { site: h.base, enabled: true })
     })
     await check('S4 native attach result survives page overrides', async () => {

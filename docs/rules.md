@@ -125,9 +125,16 @@ with its words out of order, in the system's fallback font.
   `relatedTarget`. Announcements keep only weak references, so removed hosts
   can be collected. The engine scans only text in the document and announced
   connected roots, with no element walk to discover roots. Initial text scans
-  are sliced across frames. Assigned slot content counts when reading a block
-  and deciding whether it contains other blocks. Direct shadow-root text changes
-  are observed too. Input events use their original target inside an open root,
+  are sliced across frames. Each tree decides its own text: light children of a
+  shadow host follow the page's ordinary block rules; shadow blocks read only
+  text written inside that root. Slots are never followed to assigned nodes or
+  back from light children. A shadow wrapper around a slot inherits direction
+  from its host unless its own text or the page's direction overrides it. Text
+  directly in a root uses its host as its block, read separately from the host's
+  light text. Code
+  and inline-box protection covers both a turned element's own descendants and
+  its open root's descendants. Direct shadow-root text changes are observed too.
+  Input events use their original target inside an open root,
   so typing activates its fields too. Hook notification failures never change
   the native attachment's result.
 - **B2. Off means untouched.** With the site switched off, or after it is
@@ -219,5 +226,6 @@ Known limits: closed shadow roots cannot be reached. Parser-made roots from
 `<template shadowrootmode>` are not discovered: finding them would require an
 additional element scan on every page, outside the Latin-page budget. A page
 that replaces or bypasses the document-start `attachShadow` hook can hide roots;
-there is no fallback element scan. Firefox and mobile browsers are not in the
-first version.
+there is no fallback element scan. A shadow wrapper with an explicit LTR direction
+can keep slotted Persian text LTR; slot assignment is not inspected. Firefox and
+mobile browsers are not in the first version.

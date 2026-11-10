@@ -103,17 +103,10 @@
     }
     return el && !/^(HTML|BODY)$/.test(el.tagName) ? el : null
   }
-  function contentNodes(el) {
-    if (el.nodeType === 1 && el.localName === "slot") {
-      const assigned = el.assignedNodes({ flatten: true })
-      if (assigned.length) return assigned
-    }
-    return (el.shadowRoot || el).childNodes
-  }
   function readable(el, ownItem = false) {
     let text = ""
     function read(parent) {
-      for (const node of contentNodes(parent)) {
+      for (const node of parent.childNodes) {
         if (node.nodeType === 3) text += node.data + " "
         else if (node.nodeType === 1 && !node.matches(SKIP) && !node.matches(EDIT) && !(ownItem && node.matches("ul,ol,table"))) read(node)
       }
@@ -122,14 +115,11 @@
     return text
   }
   function textBlock(el) {
-    if (!el || /^(HTML|BODY)$/.test(el.tagName)) return false
-    if (/(?:flex|grid)/.test(getComputedStyle(el).display)) return false
-    // Assigned blocks split a host just as its ordinary block children do.
-    function hasBlock(parent) {
-      return Array.from(contentNodes(parent)).some(child => child.nodeType === 1 && !child.matches(SKIP) &&
-        (child.localName === "slot" ? hasBlock(child) : !INLINE_DISPLAY.test(getComputedStyle(child).display)))
-    }
-    return !hasBlock(el)
+    const owner = el instanceof ShadowRoot ? el.host : el
+    if (!owner || /^(HTML|BODY)$/.test(owner.tagName)) return false
+    if (/(?:flex|grid)/.test(getComputedStyle(owner).display)) return false
+    // Only children in this tree split a text block.
+    return !Array.from(el.children).some(child => !child.matches(SKIP) && !INLINE_DISPLAY.test(getComputedStyle(child).display))
   }
   function direction(el, dir) {
     if (el.getAttribute("dir") !== "rtl") attr(el, "dir", dir)
@@ -190,19 +180,19 @@
     prop(el, "font-family", `${profile.families}, ${stack}`)
   }
   function collect(root, holders, blocks, groups, fields) {
-    function candidate(el, slot) {
+    function candidate(node) {
+      const el = node.parentElement || node.getRootNode().host
       if (skipped(el)) return
-      if (slot || el.assignedSlot) candidate(slot || el.assignedSlot)
       pageHasPersian = true
       const editor = editable(el)
       if (editor) { fields.add(editor); return }
       holders.add(el)
-      const block = blockFor(el)
+      const block = node.parentElement ? blockFor(el) : node.parentNode
       if (block && textBlock(block)) blocks.add(block)
-      for (let inline = el; inline && inline !== block; inline = inline.parentElement) {
+      for (let inline = node.parentElement; inline && inline !== block; inline = inline.parentElement) {
         if (["auto", "ltr"].includes(inline.getAttribute("dir")) && textBlock(inline)) blocks.add(inline)
       }
-      for (let parent = el.parentElement; parent && parent !== document.body; parent = parent.parentElement) {
+      for (let parent = node.parentElement?.parentElement; parent && parent !== document.body; parent = parent.parentElement) {
         if (parent.matches("ul,ol")) {
           const css = getComputedStyle(parent)
           if (css.listStyleType !== "none" && !/(?:flex|grid)/.test(css.display)) groups.add(parent)
@@ -211,7 +201,7 @@
       }
     }
     if (root.nodeType === 3) {
-      if (ARABIC.test(root.data)) candidate(root.parentElement || root.getRootNode().host, root.assignedSlot)
+      if (ARABIC.test(root.data)) candidate(root)
       return
     }
     if (root.nodeType !== 1 && root.nodeType !== 11 && root !== document) return
@@ -220,7 +210,7 @@
       if (!editable(field) || editable(field) === field) fields.add(field)
     }
     const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
-    for (let node; (node = walk.nextNode());) if (ARABIC.test(node.data)) candidate(node.parentElement || node.getRootNode().host, node.assignedSlot)
+    for (let node; (node = walk.nextNode());) if (ARABIC.test(node.data)) candidate(node)
     for (const shadow of shadowRoots) {
       if (root === shadow.host || root.contains(shadow.host)) collect(shadow, holders, blocks, groups, fields)
     }
@@ -233,8 +223,8 @@
     }
     for (const root of roots) collect(root, holders, blocks, groups, fields)
     const inlineDirections = new Map()
-    for (const el of new Set([...blocks, ...groups])) {
-      for (const box of (el.shadowRoot || el).querySelectorAll("*")) {
+    for (const el of new Set([...blocks, ...groups].map(block => block instanceof ShadowRoot ? block.host : block))) {
+      for (const box of [...el.querySelectorAll("*"), ...(el.shadowRoot?.querySelectorAll("*") || [])]) {
         if (/^inline-(?:block|flex|grid|table)$/.test(getComputedStyle(box).display) && !skipped(box) && !editable(box) && dominantDirection(readable(box)) !== "rtl") inlineDirections.set(box, getComputedStyle(box).direction)
       }
     }
@@ -252,11 +242,13 @@
         if (!skipped(item) && !editable(item) && blockFor(item) === item && textBlock(item)) blocks.add(item)
       }
     }
-    for (const el of blocks) {
-      const dir = dominantDirection(readable(el))
+    for (const block of blocks) {
+      // Direct root text uses the host, but is read separately from its light text.
+      const el = block instanceof ShadowRoot ? block.host : block
+      const dir = dominantDirection(readable(block))
       if (dir === "rtl" || (dir === "ltr" && Array.from(turned).some(group => group.contains(el)))) direction(el, dir)
       if (dir === "rtl") {
-        for (const code of (el.shadowRoot || el).querySelectorAll(CODE)) {
+        for (const code of [...el.querySelectorAll(CODE), ...(el.shadowRoot?.querySelectorAll(CODE) || [])]) {
           prop(code, "direction", "ltr")
           prop(code, "unicode-bidi", "isolate")
           if (/^(PRE|CODE|KBD|SAMP)$/.test(code.tagName)) prop(code, "text-align", "left")
