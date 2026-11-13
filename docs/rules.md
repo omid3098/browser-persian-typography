@@ -250,10 +250,13 @@ are not packaged.
   counts all of these hosts.
 
 Settings stay local. The background checks Persian-capable fonts on install,
-update and browser startup, caches the answer locally, then closes its offscreen
-worker host. The popup reads that cache, rechecking if the installed family list
+update and browser startup and caches the answer locally. Its offscreen worker
+host stays open, with the popup's style, font and script loaded: a cold
+extension process made the first opening after a pause take 0.3 to 0.6 s
+(Omid's Chrome: 0.59 s), against 0.08 to 0.11 s with the host open. The popup
+reads that cache, rechecking if the installed family list
 changed or the answer is not ready yet. The complete main view
-must appear within 100 ms of opening; the complete font view within 1.5 s
+must appear within 100 ms of opening, also the first time after a pause; the complete font view within 1.5 s
 the first time and 200 ms later. Each budget must pass all five measurements.
 The font view's budgets are measured after the background's check has ended.
 Known limit: a font view opened before that, in the first seconds after the

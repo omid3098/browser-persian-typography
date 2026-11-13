@@ -6,11 +6,12 @@ const { start, waitForFontCache } = require('./harness.cjs')
   for (const phase of ['install', 'startup']) {
     const h = await start(profile)
     try {
-      // No popup has opened. Wait for a finished cache and the offscreen page to close.
+      // No popup has opened. Wait for a finished cache; the offscreen page stays open to keep the popup quick.
       await waitForFontCache(h)
       const ms = await h.worker.evaluate(() => __persianFontWarmupMs)
       assert(ms > 0)
-      console.log(`PASS background ${phase}: cache ready before any popup, offscreen closed; ${ms.toFixed(1)} ms`)
+      assert.equal(await h.worker.evaluate(async () => (await chrome.runtime.getContexts({ contextTypes: ['OFFSCREEN_DOCUMENT'] })).length), 1)
+      console.log(`PASS background ${phase}: cache ready before any popup, offscreen page open; ${ms.toFixed(1)} ms`)
       if (phase === 'startup') {
         // An absent cache still uses the popup's own check.
         await h.worker.evaluate(() => chrome.storage.local.remove('persianFonts'))

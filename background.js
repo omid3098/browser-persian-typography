@@ -1,5 +1,5 @@
 import { siteKey, sitePartsFor, handleSettings } from "./settings.js"
-import { findPersianFonts } from "./popup/font-list.js"
+import { findPersianFonts, keepOffscreen } from "./popup/font-list.js"
 
 let fontWarmup
 async function warmFonts() {
@@ -14,6 +14,8 @@ async function warmFonts() {
 }
 chrome.runtime.onInstalled.addListener(() => { warmFonts().catch(() => {}) })
 chrome.runtime.onStartup.addListener(() => { warmFonts().catch(() => {}) })
+// Every start of this worker reopens the offscreen page if the browser closed it.
+keepOffscreen().catch(() => {})
 
 async function state(tab) {
   const site = siteKey(tab.url)
