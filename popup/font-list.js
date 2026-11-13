@@ -17,10 +17,15 @@ function hash(text) {
 export function fontsThatDrawPersian(families) {
   // Service workers cannot spawn the canvas workers; an offscreen page hosts them.
   if (typeof Worker === "undefined") return (async () => {
-    await keepOffscreen()
-    const result = await chrome.runtime.sendMessage({ type: "check-persian-fonts", families })
-    if (result.error) throw new Error(result.error)
-    return new Set(result.families)
+    await chrome.offscreen.createDocument({
+      url: "popup/font-check.html", reasons: ["WORKERS"],
+      justification: "Check installed fonts for Persian before the popup opens"
+    })
+    try {
+      const result = await chrome.runtime.sendMessage({ type: "check-persian-fonts", families })
+      if (result.error) throw new Error(result.error)
+      return new Set(result.families)
+    } finally { await chrome.offscreen.closeDocument() }
   })()
   const count = Math.max(1, Math.min(4, navigator.hardwareConcurrency || 4))
   const fontUrl = new URL("../fonts/Vazirmatn.woff2", import.meta.url).href
@@ -35,20 +40,6 @@ export function fontsThatDrawPersian(families) {
     worker.onerror = event => { worker.terminate(); reject(new Error(event.message)) }
     worker.postMessage({ probe: PROBE, families: part, fontUrl })
   }))).then(lists => new Set(lists.flat()))
-}
-
-// The offscreen page stays open. It hosts the check's workers, and it keeps the extension's page process
-// running with the popup's style and font loaded: a cold process made the first opening after a pause
-// take 0.3 to 0.6 s instead of 0.1 s.
-let opening = null
-export function keepOffscreen() {
-  return opening ??= (async () => {
-    if ((await chrome.runtime.getContexts({ contextTypes: ["OFFSCREEN_DOCUMENT"] })).length) return
-    await chrome.offscreen.createDocument({
-      url: "popup/font-check.html", reasons: ["WORKERS"],
-      justification: "Check installed fonts for Persian, and keep the popup quick to open"
-    })
-  })().finally(() => { opening = null })
 }
 
 export async function findPersianFonts() {

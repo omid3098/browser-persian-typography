@@ -1,5 +1,5 @@
 import { siteKey, sitePartsFor, handleSettings } from "./settings.js"
-import { findPersianFonts, keepOffscreen } from "./popup/font-list.js"
+import { findPersianFonts } from "./popup/font-list.js"
 
 let fontWarmup
 // The check holds up every page of the extension, the popup too, for seconds while it runs. Browser
@@ -17,8 +17,6 @@ async function warmFonts(fresh) {
 }
 chrome.runtime.onInstalled.addListener(() => { warmFonts(true).catch(() => {}) })
 chrome.runtime.onStartup.addListener(() => { warmFonts(false).catch(() => {}) })
-// Every start of this worker reopens the offscreen page if the browser closed it.
-keepOffscreen().catch(() => {})
 
 async function state(tab) {
   const site = siteKey(tab.url)

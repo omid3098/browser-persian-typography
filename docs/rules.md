@@ -250,20 +250,23 @@ are not packaged.
   counts all of these hosts.
 
 Settings stay local. The background checks Persian-capable fonts on install and
-update, and at browser startup only when the installed font list changed, and
-caches the answer locally. While the check runs, every extension page waits:
-a bare page took 2.7 to 4 s to open instead of 0.2 s. Its offscreen worker
-host stays open, with the popup's style, font and script loaded: a cold
-extension process made the first opening after a pause take 0.3 to 0.6 s
-(Omid's Chrome: 0.59 s), against 0.08 to 0.11 s with the host open. The popup
-reads that cache, rechecking if the installed family list
+update, and at browser startup only when the installed font list changed,
+caches the answer locally, then closes its offscreen worker host. While the
+check runs, every extension page waits: a bare page took 2.7 to 4 s to open
+instead of 0.2 s. The popup reads that cache, rechecking if the installed family list
 changed or the answer is not ready yet. The complete main view
-must appear within 100 ms of opening, also the first time after a pause; the complete font view within 1.5 s
+must appear within 100 ms of opening; the complete font view within 1.5 s
 the first time and 200 ms later. Each budget must pass all five measurements.
 The font view's budgets are measured after the background's check has ended.
 Known limit: a font view opened before that, in the first seconds after the
 extension is installed, runs the popup's own check; it took 2.9 and 4.7 s in
 two measured runs.
+Known limit: the first opening after a pause must start the extension's
+process again, so the main view took 0.13 to 0.22 s in headless Chrome 157 and
+0.59 s in Omid's Chrome, against about 0.1 s for an opening soon after another.
+Keeping an offscreen page open makes every opening 0.07 to 0.09 s, but that
+process holds about 50 MB of memory at all times, also with an empty page.
+Omid chose not to pay that for an extension the user should forget (2026-11-13).
 
 `npm run build` copies only shipped files to the ignored `dist/` folder.
 Source edits do not change that loadable copy; only another build does.

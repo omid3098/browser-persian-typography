@@ -14,7 +14,7 @@ Uses chrome.fontSettings.getFontList() to list installed fonts. It calls this du
 
 ## Permission justification: offscreen
 
-Uses the WORKERS reason to host the installed-font check when running from the background service worker, which cannot start Web Workers itself. On install and update, and at browser startup when the installed font list changed, it opens popup/font-check.html, checks font support with workers and OffscreenCanvas, and caches the result locally. The offscreen document stays open afterwards, so later checks need no new document and the popup opens without a delay. The document handles only font-check messages; it does not read web-page content or contact a server. The popup can run the check itself if the cache is not ready or the installed font list changed.
+Uses the WORKERS reason to host the installed-font check when running from the background service worker, which cannot start Web Workers itself. On install and update, and at browser startup when the installed font list changed, it opens popup/font-check.html, checks font support with workers and OffscreenCanvas, caches the result locally and closes the offscreen document in a finally block. The document handles only font-check messages; it does not read web-page content or contact a server. The popup can run the check itself if the cache is not ready or the installed font list changed.
 
 ## Host permission justification: <all_urls>
 

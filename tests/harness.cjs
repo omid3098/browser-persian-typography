@@ -55,9 +55,7 @@ async function start(name, { extension = true } = {}) {
     channel: "chromium", headless: true, viewport: { width: 1440, height: 900 },
     args: [...(extension ? [`--disable-extensions-except=${path.join(root, 'dist')}`, `--load-extension=${path.join(root, 'dist')}`] : ["--disable-extensions"]), "--no-first-run", "--disable-background-networking", "--disable-gpu"]
   })
-  // Pick the extension's own worker by name; the browser can start other service workers too.
-  const ours = w => w.url().endsWith("/background.js")
-  const worker = extension ? context.serviceWorkers().find(ours) || await context.waitForEvent("serviceworker", { predicate: ours }) : null
+  const worker = extension ? context.serviceWorkers()[0] || await context.waitForEvent("serviceworker") : null
   const base = `http://127.0.0.1:${server.address().port}`
   const control = await context.newPage()
   if (extension) await control.goto(new URL("manifest.json", worker.url()).href)
@@ -136,6 +134,7 @@ async function waitForFontCache(h) {
     async function check() {
       const { persianFonts } = await chrome.storage.local.get('persianFonts')
       if (!persianFonts?.families.includes('Tahoma')) return
+      if ((await chrome.runtime.getContexts({ contextTypes: ['OFFSCREEN_DOCUMENT'] })).length) return
       clearTimeout(timer)
       chrome.storage.onChanged.removeListener(check)
       resolve()
