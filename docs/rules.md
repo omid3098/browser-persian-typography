@@ -249,8 +249,10 @@ are not packaged.
   row. Removing the last row returns to the main view. The row on the main view
   counts all of these hosts.
 
-Settings stay local. The background checks Persian-capable fonts on install,
-update and browser startup and caches the answer locally. Its offscreen worker
+Settings stay local. The background checks Persian-capable fonts on install and
+update, and at browser startup only when the installed font list changed, and
+caches the answer locally. While the check runs, every extension page waits:
+a bare page took 2.7 to 4 s to open instead of 0.2 s. Its offscreen worker
 host stays open, with the popup's style, font and script loaded: a cold
 extension process made the first opening after a pause take 0.3 to 0.6 s
 (Omid's Chrome: 0.59 s), against 0.08 to 0.11 s with the host open. The popup

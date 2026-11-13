@@ -58,7 +58,7 @@ More about the popup:
 <details>
 <summary>How the font list is prepared</summary>
 
-The list comes from the browser's installed fonts. The background worker prepares it on install, update and browser startup, so the first opening can read it at once. Its offscreen page stays open after the check, so the popup opens at once even after a long pause. The popup can still check the fonts itself if that answer is not ready yet. Font names stay readable in the popup's own font.
+The list comes from the browser's installed fonts. The background worker prepares it on install and update, and again at browser startup only if the installed fonts changed, so the first opening can read it at once. Its offscreen page stays open after the check, so the popup opens at once even after a long pause. The popup can still check the fonts itself if that answer is not ready yet. Font names stay readable in the popup's own font.
 
 </details>
 
