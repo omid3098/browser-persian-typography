@@ -64,6 +64,10 @@ The list comes from the browser's installed fonts. The background worker prepare
 
 ## Install
 
+Install it from the [Chrome Web Store](https://chromewebstore.google.com/detail/persian-typography/ogoojppfonfekmklomnfklllehjnlfcf). It does not show up in store search, so use this link. Then reload an open web tab once and pin **Persian Typography** from the extensions menu.
+
+### Build from source
+
 Build the extension from the repository, then load the built folder.
 
 1. Clone this repository. Install [Node.js](https://nodejs.org). No dependency installation is needed to build.

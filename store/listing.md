@@ -104,6 +104,12 @@ https://github.com/omid3098/browser-persian-typography
 
 https://github.com/omid3098/browser-persian-typography/issues
 
+## Store page
+
+https://chromewebstore.google.com/detail/persian-typography/ogoojppfonfekmklomnfklllehjnlfcf
+
+Item ID: `ogoojppfonfekmklomnfklllehjnlfcf`. Visibility: unlisted, so only people with the link find it. Version 0.1.0 was sent on 2026-11-10.
+
 ## Mature content
 
 No
