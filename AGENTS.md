@@ -1,8 +1,8 @@
 # Browser Persian Typography
 
 A browser extension (Manifest V3, Chromium first) that applies Omid's Persian
-typography rules on every web page: Vazirmatn for Persian letters and a smart
-direction for each block of text.
+typography rules on every web page: a Persian font the user picks for Persian
+letters, Vazirmatn by default, and a smart direction for each block of text.
 
 - `docs/rules.md` is the reference for what the engine does and for its
   budgets. A change to behaviour changes that file in the same commit.
@@ -14,3 +14,7 @@ direction for each block of text.
   `.agent-work/`. Never open a visible browser window.
 - The extension never rewrites page text, uses no network and loads no remote
   code.
+- Text and pictures for users (store listing, README, screenshots) present the
+  font as the user's choice, any Persian font, with Vazirmatn as the default only.
+  Wrong (Omid, 2026-11-18): a store picture captioned «فونت وزیرمتن و جهت
+  درست»; he asked for «هر فونت فارسی».
