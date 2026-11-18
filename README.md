@@ -1,7 +1,7 @@
 <h1 align="center">Persian Typography</h1>
 
 <p align="center">
-A Manifest V3 extension for Chromium. It gives Persian text on web pages the Vazirmatn font and a right-to-left direction, one text block at a time.
+A Manifest V3 extension for Chromium. It gives Persian text on web pages any Persian font you choose, Vazirmatn by default, and a right-to-left direction, one text block at a time.
 </p>
 
 <p align="center">
@@ -12,7 +12,7 @@ A Manifest V3 extension for Chromium. It gives Persian text on web pages the Vaz
 
 ## What you get
 
-- **Vazirmatn for Persian letters only.** Latin letters, digits, icons and emoji keep the page's own fonts.
+- **Any Persian font, for Persian letters only.** Vazirmatn is the default; the popup lists the Persian fonts installed on your computer. Latin letters, digits, icons and emoji keep the page's own fonts.
 - **A direction for each text block.** A block with Persian text reads right to left, including a post that begins with an English name. Page layout, centred headings and code keep their order.
 - **It keeps up with the page.** It handles new and streaming text, lists, data tables, editable boxes, nested open shadow roots and frames. The font also loads on pages with a strict Content Security Policy.
 - **One control for each site.** The popup has a switch and a font choice. See [One control per site](#one-control-per-site).
@@ -34,7 +34,7 @@ Click the toolbar icon to open the popup. Its switch turns the whole site off (t
 
 | Part | What it does on that site |
 | --- | --- |
-| **فونت و جهت** | Vazirmatn and the right-to-left direction. This is the default. |
+| **فونت و جهت** | The chosen font (Vazirmatn by default) and the right-to-left direction. This is the default. |
 | **فقط جهت** | The direction only. The site keeps its own font. |
 | **فقط فونت** | The font only. The site keeps its own direction. |
 
