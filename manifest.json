@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Persian Typography",
-  "version": "0.1.1",
-  "description": "Persian text in the Vazirmatn font, with the right direction for each text block, on any site. One switch for each site.",
+  "version": "0.1.2",
+  "description": "Any Persian font you choose (Vazirmatn by default), with the right direction for each text block, on any site. One switch per site.",
   "permissions": ["storage", "fontSettings", "offscreen"],
   "host_permissions": ["<all_urls>"],
   "background": { "service_worker": "background.js", "type": "module" },
