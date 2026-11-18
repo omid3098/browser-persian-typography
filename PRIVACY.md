@@ -1,10 +1,10 @@
 # Privacy policy: Persian Typography
 
-Last updated: 2026-11-10 (version 0.1.0)
+Last updated: 2026-11-18 (version 0.1.2)
 
 Policy address: https://github.com/omid3098/browser-persian-typography/blob/main/PRIVACY.md
 
-Persian Typography is a browser extension. It shows Persian text on web pages in the Vazirmatn font (or a font the user chooses) and adjusts the direction of text blocks. This policy says what the extension reads, what it keeps, and what it shares.
+Persian Typography is a browser extension. It shows Persian text on web pages in a Persian font the user chooses (Vazirmatn by default) and adjusts the direction of text blocks. This policy says what the extension reads, what it keeps, and what it shares.
 
 ## What the extension reads
 
