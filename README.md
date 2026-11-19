@@ -5,9 +5,9 @@ A Manifest V3 extension for Chromium. It gives Persian text on web pages any Per
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/demo-posts.png" width="640" alt="Persian social posts that start with a Latin word and contain emoji, shown before and after the extension. Before, the posts are laid out left to right. After, they read right to left in Vazirmatn.">
+  <img src="store-assets/screenshot-1.png" width="720" alt="The headline «مرورگر شما حالا فارسی بلد است» (your browser now knows Persian) over Persian posts, a chat and search results that read right to left.">
   <br>
-  <em>Persian posts that start with a Latin word and contain emoji, before and after.</em>
+  <em>Persian posts, chats and search results, in the font you choose and the right direction.</em>
 </p>
 
 ## What you get
@@ -20,12 +20,26 @@ A Manifest V3 extension for Chromium. It gives Persian text on web pages any Per
 
 ## See it
 
-This chat keeps its text in open shadow roots. The picture shows its messages and the message box while typing, before and after. Each message follows its own text, and the box turns right to left once it holds Persian.
+A Persian post that starts with an English word still reads from the right. The English word and the emoji keep their place.
 
 <p align="center">
-  <img src="docs/screenshots/demo-chat.png" width="640" alt="A chat inside open shadow roots, with messages and a message box that holds text being typed, shown before and after the extension.">
+  <img src="store-assets/screenshot-2.png" width="720" alt="A Persian post that starts with the English word Docker and ends with an emoji. It reads from the right; notes point to the font, the right-to-left start and the English word and emoji in their place.">
   <br>
-  <em>A chat inside open shadow roots, before and after.</em>
+  <em>One post: any Persian font, a right-to-left start, English and emoji in place.</em>
+</p>
+
+The same works on every site: posts and messages on X, DuckDuckGo results and Wikipedia.
+
+<p align="center">
+  <img src="store-assets/screenshot-3.png" width="720" alt="Four lines of Persian text from X, X messages, DuckDuckGo and Wikipedia, each reading right to left.">
+  <br>
+  <em>Persian from the right, on X, in X messages, on DuckDuckGo and on Wikipedia.</em>
+</p>
+
+<p align="center">
+  <img src="store-assets/screenshot-5.png" width="720" alt="A post, a search result and a chat message, each Persian with an English word, reading right to left. The headline says «فارسی، هر جا که می‌خونی».">
+  <br>
+  <em>Persian wherever you read it.</em>
 </p>
 
 ## One control per site
@@ -39,7 +53,7 @@ Click the toolbar icon to open the popup. Its switch turns the whole site off (t
 | **فقط فونت** | The font only. The site keeps its own direction. |
 
 <p align="center">
-  <img src="docs/screenshots/popup-site-control.png" width="1008" alt="The extension popup in its three states: font and direction, direction only, and font only. It shows the switch for the current site and, under it, a row with three parts: فونت و جهت, فقط جهت and فقط فونت.">
+  <img src="store-assets/screenshot-4.png" width="720" alt="The extension popup beside a Persian feed on X. It shows the switch for the current site and, under it, a row with three parts: فونت و جهت, فقط جهت and فقط فونت, then the font row and the list of sites that are off.">
   <br>
   <em>The popup: the site switch and, under it, the row with three parts.</em>
 </p>
@@ -82,26 +96,12 @@ Editing source files does not change the loaded copy. After an update, run `npm 
 
 ## Known limits
 
-These pages show where the extension stops, or where it does something you may not expect.
+Where the extension stops, or does something you may not expect:
 
-<p align="center">
-  <em>On a search results page, a site's Persian name moves to the right end of its line, away from the site's icon.</em>
-</p>
-
-<p align="center">
-  <em>A search result's snippet reads in the right order but starts at the left edge.</em>
-</p>
-
-<p align="center">
-  <em>In Persian Wikipedia's reference lists, an English entry that contains Persian digits becomes right-aligned with its number on the right. A purely English entry stays as it is.</em>
-</p>
-
-<p align="center">
-  <em>Persian text in an open shadow root gets the font and direction rules. Text in a closed shadow root stays as it is.</em>
-</p>
-
-Limits without a picture:
-
+- On a search results page, a site's Persian name moves to the right end of its line, away from the site's icon.
+- A search result's snippet reads in the right order but starts at the left edge.
+- In Persian Wikipedia's reference lists, an English entry that contains Persian digits becomes right-aligned with its number on the right. A purely English entry stays as it is.
+- Persian text in an open shadow root gets the font and direction rules. Text in a closed shadow root stays as it is.
 - An English label that contains a Persian phrase turns right to left as a whole. One Persian letter is enough to decide the direction of a block.
 - Persian typed into a box whose font is the browser's default monospace font keeps a fallback font. A page's fonts that are set to the generic `monospace` stay as they are. A font stack that names only a monospace face, such as Consolas, is not recognised and gets the Persian font.
 - A different font width can change where a line breaks. The replacement font matches the page's vertical measures and allows room for whole letters if they cannot fit.
